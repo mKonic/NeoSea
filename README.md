@@ -1,10 +1,10 @@
 <div align="center">
 
-<h1 align="center"> neosea </h1>
+<h1 align="center"> NeoSea </h1>
 
-[![Release build](https://img.shields.io/github/actions/workflow/status/mKonic/neosea/release.yml?labelColor=27303D&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/neosea/actions/workflows/release.yml)
-[![Release](https://img.shields.io/github/v/release/mKonic/neosea.svg?maxAge=3600&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/neosea/releases/latest)
-[![License: MIT](https://img.shields.io/github/license/mKonic/neosea?labelColor=27303D&color=0877d2)](/LICENSE)
+[![Release build](https://img.shields.io/github/actions/workflow/status/mKonic/NeoSea/release.yml?labelColor=27303D&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/NeoSea/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/mKonic/NeoSea.svg?maxAge=3600&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/NeoSea/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/mKonic/NeoSea?labelColor=27303D&color=0877d2)](/LICENSE)
 
 <div align="left">
 

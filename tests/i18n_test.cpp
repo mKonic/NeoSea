@@ -2,6 +2,7 @@
 
 #include "print.h"
 
+#include <QRegularExpression>
 #include <gtest/gtest.h>
 
 using namespace neosea;
@@ -33,4 +34,15 @@ TEST(I18n, NumbersFollowTheLanguage)
 {
     I18n::load(NEOSEA_SOURCE_RESOURCES "/locales", "en");
     EXPECT_EQ(I18n::formatNumber(1200), "1,200");
+}
+
+TEST(I18n, NeoSpeaksAsNeoSea)
+{
+    I18n::load(NEOSEA_SOURCE_RESOURCES "/locales", "en");
+    EXPECT_EQ(t("About NEO"), "About NeoSea");
+    // a book called NEO keeps its name
+    EXPECT_EQ(t("“{name}” · one book", {{"name", "NEO"}}), QString::fromUtf8("“NEO” · one book"));
+    I18n::load(NEOSEA_SOURCE_RESOURCES "/locales", "fr");
+    EXPECT_FALSE(t("NEO Shortcuts").contains(QRegularExpression("\\bNEO\\b")));
+    EXPECT_TRUE(t("NEO Shortcuts").contains("NeoSea"));
 }

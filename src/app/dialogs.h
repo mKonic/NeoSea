@@ -3,6 +3,7 @@
 // a list of choices, each with a sentence saying what it does. Esc or a click
 // outside is Cancel. And the toast: a line at the foot of the window.
 
+#include <QAbstractButton>
 #include <QString>
 #include <QVariant>
 #include <QWidget>
@@ -20,6 +21,16 @@ struct Choice {
     QString desc;
     QVariant value;
     bool danger = false;
+};
+
+// a choice as a card: its name over a sentence saying what it does. Sized by
+// its words (a QPushButton sizes by its own text and clips wrapped lines).
+class ChoiceCard : public QAbstractButton {
+public:
+    ChoiceCard(const Choice &c, QWidget *parent);
+
+protected:
+    void paintEvent(QPaintEvent *e) override;
 };
 
 // NEO's modal: a titled sheet in the room's colors, its layout a QVBoxLayout

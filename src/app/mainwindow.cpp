@@ -51,7 +51,7 @@ namespace neosea {
 
 MainWindow::MainWindow(App *app, QWidget *parent) : QMainWindow(parent), m_app(app)
 {
-    setWindowTitle("neosea");
+    setWindowTitle(kAppName);
     setMinimumSize(700, 600);
     applyTheme();
     m_views = new QStackedWidget(this);
@@ -376,14 +376,14 @@ void MainWindow::buildMenus()
         langGroup->addAction(a);
         connect(a, &QAction::triggered, this, [this, code = l.code] {
             AppSettings::set("uiLanguage", code);
-            m_toast->show(t("The new language takes over when neosea next opens."), 6000);
+            m_toast->show(t("The new language takes over when NEO next opens."), 6000);
         });
     }
 
     QMenu *help = menuBar()->addMenu(t("Help"));
     add(help, t("NEO Shortcuts"), {}, [this] { showHelp(); });
     help->addSeparator();
-    add(help, t("About NEO").replace("NEO", "neosea"), {}, [this] { showAbout(); });
+    add(help, t("About NEO"), {}, [this] { showAbout(); });
 }
 
 void MainWindow::openBook(const QString &bookId)
@@ -393,7 +393,7 @@ void MainWindow::openBook(const QString &bookId)
         return;
     }
     const auto meta = m_app->session()->book();
-    setWindowTitle(meta.value("title").toString() + " — neosea");
+    setWindowTitle(meta.value("title").toString() + " — " + kAppName);
     m_views->setCurrentWidget(m_editor);
     m_editor->openSession();
     buildMenus();
@@ -403,7 +403,7 @@ void MainWindow::backToShelf()
 {
     m_editor->closeSession();
     m_app->closeBook();
-    setWindowTitle("neosea");
+    setWindowTitle(kAppName);
     m_views->setCurrentWidget(m_shelf);
     m_shelf->rebuild();
     buildMenus();
@@ -721,7 +721,7 @@ void MainWindow::showHelp()
 
 void MainWindow::showAbout()
 {
-    optionModal(this, "neosea", t("Version {version}", {{"version", QString::fromLatin1(kVersionName)}}) + "\n" + t("A word processor for authors."), {});
+    optionModal(this, kAppName, t("Version {version}", {{"version", QString::fromLatin1(kVersionName)}}) + "\n" + t("A word processor for authors."), {});
 }
 
 void MainWindow::firstRun()
@@ -733,10 +733,10 @@ void MainWindow::firstRun()
     auto *col = new QVBoxLayout(&d);
     col->setContentsMargins(38, 34, 38, 30);
     col->setSpacing(10);
-    auto *h = new QLabel(t("Welcome to NEO").replace("NEO", "neosea"), &d);
+    auto *h = new QLabel(t("Welcome to NEO"), &d);
     h->setStyleSheet(QStringLiteral("color: %1; font-size: 18px;").arg(theme().accent.name()));
     col->addWidget(h);
-    auto *intro = new QLabel(t("NEO knows you're writing books. A few quick questions and it will never ask anything again.").replace("NEO", "neosea"), &d);
+    auto *intro = new QLabel(t("NEO knows you're writing books. A few quick questions and it will never ask anything again."), &d);
     intro->setWordWrap(true);
     col->addWidget(intro);
     auto *nameL = new QLabel(t("Your name") + "  <span style='color:#8a8a8a;font-size:12px'>" + t("(appears as the author on every document — leave blank for “Anonymous”)") + "</span>", &d);
@@ -756,25 +756,17 @@ void MainWindow::firstRun()
     for (const auto &[label, desc, value] : QList<std::tuple<QString, QString, QString>>{
              {t("Pantser"), t("I write by the seat of my pants. New books open on a blank page."), "pantser"},
              {t("Plotter"), t("I outline first. New books open in the Outline tab."), "plotter"}}) {
-        auto *b = new QPushButton(&d);
-        b->setObjectName("choice");
-        auto *bl = new QVBoxLayout(b);
-        auto *l1 = new QLabel(label, b);
-        l1->setStyleSheet(QStringLiteral("color: %1; font-weight: 600;").arg(theme().accent.name()));
-        auto *l2 = new QLabel(desc, b);
-        l2->setWordWrap(true);
-        l2->setStyleSheet("color: #8a8a8a; font-size: 12px;");
-        for (QLabel *l : {l1, l2}) l->setAttribute(Qt::WA_TransparentForMouseEvents);
-        bl->addWidget(l1);
-        bl->addWidget(l2);
-        b->setMinimumHeight(bl->sizeHint().height() + 8);
-        connect(b, &QPushButton::clicked, &d, [&d, &style, v = value] {
+        auto *b = new ChoiceCard({label, desc, value}, &d);
+        // equal cards: the row splits evenly and both take the taller one's height
+        b->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        connect(b, &QAbstractButton::clicked, &d, [&d, &style, v = value] {
             style = v;
             d.accept();
         });
-        row->addWidget(b);
+        row->addWidget(b, 1);
     }
     col->addLayout(row);
+    col->addStretch(1);
     d.exec();
     QJsonObject &lib = m_app->library();
     lib.insert("authorName", name->text().trimmed());

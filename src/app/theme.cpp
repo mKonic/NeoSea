@@ -63,9 +63,9 @@ QPushButton { background: none; border: none; color: %6; padding: 7px 10px; }
 QPushButton:hover { color: %1; }
 QPushButton#gold { background: %5; color: #191919; border-radius: 6px; padding: 7px 18px; }
 QPushButton#gold:hover { background: #d4b479; }
-QPushButton#choice { text-align: left; background: %2; border: 1px solid %4; border-radius: 8px; padding: 12px 14px; color: %1; }
-QPushButton#choice:hover { border-color: %5; }
-QPushButton#choice[danger="true"] { border-color: #6b3a34; }
+#choice { background: %2; border: 1px solid %4; border-radius: 8px; color: %1; }
+#choice:hover, #choice:focus { border-color: %5; }
+#choice[danger="true"] { border-color: #6b3a34; }
 QPushButton#outline { background: none; border: 1px solid %4; border-radius: 6px; color: %6; padding: 5px 12px; font-size: 12px; }
 QPushButton#outline:hover { color: %5; border-color: %5; }
 QMenu { background: #262626; border: 1px solid #3a3a3a; border-radius: 8px; padding: 6px; color: #dddddd; }

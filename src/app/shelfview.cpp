@@ -699,11 +699,11 @@ ShelfView::ShelfView(App *app, QWidget *parent) : QScrollArea(parent), m_app(app
     col->setContentsMargins(60, 44, 60, 80);
     col->setSpacing(0);
     auto *header = new QHBoxLayout;
-    auto *title = new QLabel("NEOSEA", m_content);
+    auto *title = new QLabel(kAppName, m_content);
     QFont tf = title->font();
     tf.setPixelSize(22);
     tf.setWeight(QFont::Light);
-    tf.setLetterSpacing(QFont::AbsoluteSpacing, 10);
+    tf.setLetterSpacing(QFont::AbsoluteSpacing, 3);
     title->setFont(tf);
     title->setStyleSheet(QStringLiteral("color: %1;").arg(theme().accent.name()));
     header->addWidget(title);

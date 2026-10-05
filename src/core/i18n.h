@@ -12,6 +12,8 @@
 
 namespace neosea {
 
+inline const QString kAppName = QStringLiteral("NeoSea");
+
 struct Language {
     QString code;
     QString name; // in its own words, from "_meta"

@@ -12,10 +12,44 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
+#include <QStyleOption>
 #include <QTimer>
 #include <QVBoxLayout>
 
 namespace neosea {
+
+ChoiceCard::ChoiceCard(const Choice &c, QWidget *parent)
+    : QAbstractButton(parent)
+{
+    setObjectName("choice");
+    setProperty("danger", c.danger);
+    setAttribute(Qt::WA_Hover);
+    setFocusPolicy(Qt::StrongFocus);
+    setCursor(Qt::PointingHandCursor);
+    auto *bl = new QVBoxLayout(this);
+    bl->setContentsMargins(14, 10, 14, 10);
+    bl->setSpacing(4);
+    auto *l = new QLabel(c.label, this);
+    l->setStyleSheet(QStringLiteral("color: %1; font-weight: 600;").arg(c.danger ? "#d97b6c" : theme().accent.name()));
+    l->setAttribute(Qt::WA_TransparentForMouseEvents);
+    bl->addWidget(l);
+    if (!c.desc.isEmpty()) {
+        auto *s = new QLabel(c.desc, this);
+        s->setWordWrap(true);
+        s->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(theme().muted.name()));
+        s->setAttribute(Qt::WA_TransparentForMouseEvents);
+        bl->addWidget(s);
+    }
+    bl->addStretch(1);
+}
+
+void ChoiceCard::paintEvent(QPaintEvent *)
+{
+    QStyleOption opt;
+    opt.initFrom(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+}
 
 QDialog *makeDialog(QWidget *parent, const QString &title, int width)
 {
@@ -74,25 +108,8 @@ QVariant optionModal(QWidget *parent, const QString &title, const QString &messa
     }
     QVariant picked;
     for (const Choice &c : choices) {
-        auto *b = new QPushButton(d);
-        b->setObjectName("choice");
-        b->setProperty("danger", c.danger);
-        auto *bl = new QVBoxLayout(b);
-        bl->setContentsMargins(14, 10, 14, 10);
-        bl->setSpacing(4);
-        auto *l = new QLabel(c.label, b);
-        l->setStyleSheet(QStringLiteral("color: %1; font-weight: 600;").arg(c.danger ? "#d97b6c" : theme().accent.name()));
-        l->setAttribute(Qt::WA_TransparentForMouseEvents);
-        bl->addWidget(l);
-        if (!c.desc.isEmpty()) {
-            auto *s = new QLabel(c.desc, b);
-            s->setWordWrap(true);
-            s->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(theme().muted.name()));
-            s->setAttribute(Qt::WA_TransparentForMouseEvents);
-            bl->addWidget(s);
-        }
-        b->setMinimumHeight(bl->sizeHint().height());
-        QObject::connect(b, &QPushButton::clicked, d, [d, &picked, v = c.value] {
+        auto *b = new ChoiceCard(c, d);
+        QObject::connect(b, &QAbstractButton::clicked, d, [d, &picked, v = c.value] {
             picked = v;
             d->accept();
         });

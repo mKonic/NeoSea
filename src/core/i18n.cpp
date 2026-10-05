@@ -158,6 +158,10 @@ QString I18n::t(const QString &key, const QVariantMap &vars)
         str = pick(s.base.value(key), vars, s.englishPlural.get());
     }
     if (str.isNull()) str = key;
+    // NEO's strings name NEO; here the app is NeoSea (before the variables go
+    // in, so a book called NEO keeps its name)
+    static const QRegularExpression neo(QStringLiteral("\\bNEO\\b"));
+    str.replace(neo, kAppName);
     return fill(str, vars);
 }
 
