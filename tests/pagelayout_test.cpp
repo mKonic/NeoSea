@@ -158,3 +158,10 @@ TEST(Layout, TheWalkingNoteGetsRoomUnderItsParagraph)
     p.layout->setSpaceAfter(-1, 0);
     EXPECT_NEAR(p.layout->blockBoundingRect(p.block(2)).top(), before, 0.5);
 }
+
+TEST(Layout, ProseAfterPoetryIsIndented)
+{
+    Page p("<p>Opening words.</p><p class=\"poetry\"><i>The sky is a lie<br>and the lie is a sky</i></p><p>He went back down.</p><p>Then more.</p>");
+    EXPECT_NEAR(p.line(2, 0).x(), 34, 0.5);
+    EXPECT_NEAR(p.line(3, 0).x(), 34, 0.5);
+}
