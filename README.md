@@ -1,0 +1,18 @@
+<div align="center">
+
+<h1 align="center"> neosea </h1>
+
+[![Release build](https://img.shields.io/github/actions/workflow/status/mKonic/neosea/release.yml?labelColor=27303D&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/neosea/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/mKonic/neosea.svg?maxAge=3600&label=Release&labelColor=06599d&color=043b69)](https://github.com/mKonic/neosea/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/mKonic/neosea?labelColor=27303D&color=0877d2)](/LICENSE)
+
+<div align="left">
+
+A distraction-free word processor for authors: a bookshelf of your books, manuscripts that look like
+books as you write them, outlining with index cards, screenplays, and plain files on your disk. This
+fork of [hughhowey/neo](https://github.com/hughhowey/neo) is a C++ and Qt rewrite, without the AI
+cover painting.
+
+## License
+
+MIT, as upstream. See [LICENSE](./LICENSE).
