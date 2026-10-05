@@ -4,6 +4,7 @@
 #include "app/auxpage.h"
 #include "app/outlineboard.h"
 #include "app/searchbar.h"
+#include "core/darlings.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
 #include "app/navpane.h"
@@ -17,6 +18,8 @@
 #include "core/textdoc.h"
 
 #include <QApplication>
+#include <QMimeData>
+#include <QShortcut>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QKeyEvent>
@@ -251,6 +254,8 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
 {
     setFocusPolicy(Qt::NoFocus);
     m_walk = new WalkNote(this);
+    auto *toDarlings = new QShortcut(QKeySequence("Ctrl+Shift+D"), this, this, &EditorView::darlingFromKeyboard);
+    toDarlings->setContext(Qt::WidgetWithChildrenShortcut);
     m_stack = new QStackedWidget(this);
     m_scroll = new QScrollArea;
     m_scroll->setFrameShape(QFrame::NoFrame);
@@ -293,7 +298,11 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
         b->setCheckable(true);
         b->setProperty("tab", key);
         connect(b, &QPushButton::clicked, this, [this, key] { showTab(key); });
-        if (key == "darlings") b->setToolTip(t("Drag any selection here. It's saved, not gone."));
+        if (key == "darlings") {
+            b->setToolTip(t("Drag any selection here. It's saved, not gone."));
+            b->setAcceptDrops(true);
+            b->installEventFilter(this);
+        }
         m_tabs.insert(key, b);
         bar->addWidget(b);
     }
@@ -348,6 +357,22 @@ void EditorView::layoutOverlays()
 
 bool EditorView::eventFilter(QObject *o, QEvent *e)
 {
+    // words dragged out of a chapter onto the Darlings tab: the cut is made
+    // here, at the drop, so the text edit finds nothing left to move
+    if (o == m_tabs.value("darlings") && (e->type() == QEvent::DragEnter || e->type() == QEvent::DragMove || e->type() == QEvent::Drop || e->type() == QEvent::DragLeave)) {
+        auto *b = m_tabs.value("darlings");
+        if (e->type() == QEvent::DragLeave) {
+            b->setDown(false);
+            return true;
+        }
+        auto *d = static_cast<QDropEvent *>(e);
+        ChapterEdit *src = ChapterEdit::draggingFrom();
+        if (!src || m_tab != "manuscript" || !src->textCursor().hasSelection()) return false;
+        d->acceptProposedAction();
+        b->setDown(e->type() != QEvent::Drop);
+        if (e->type() == QEvent::Drop) selectionToDarlings(src);
+        return true;
+    }
     if (e->type() == QEvent::MouseMove && isVisible()) {
         // the panes wake from the margins, never over the page
         const QPoint p = mapFromGlobal(QCursor::pos());
@@ -1238,6 +1263,36 @@ void EditorView::refreshFromDisk()
 }
 
 void EditorView::openSearch() { m_search->open(); }
+
+void EditorView::selectionToDarlings(ChapterEdit *e)
+{
+    BookSession *s = m_app->session();
+    if (!s || !e || !e->textCursor().hasSelection() || e->textCursor().selectedText().trimmed().isEmpty()) return;
+    syncAll();
+    snapshot("darling", false);
+    e->breakRun()++; // Ctrl+Z inside the text must reach the snapshot, not the document's own undo
+    QTextCursor c = e->textCursor();
+    const QString chId = e->chId();
+    const QJsonObject d = darlings::cut(c, chId, s->order().contains(chId) ? chapterName(chId, s->book()) : t("Manuscript"));
+    e->setTextCursor(c);
+    QJsonArray all = s->darlings();
+    all.prepend(d);
+    s->darlings() = all;
+    s->saveDarlings();
+    chapterEdited(e);
+    emit m_app->toast(t("Saved to Darlings — kill without remorse ({key} to undo)", {{"key", "Ctrl+Z"}}));
+}
+
+void EditorView::darlingFromKeyboard()
+{
+    auto *e = qobject_cast<ChapterEdit *>(QApplication::focusWidget());
+    if (m_tab != "manuscript" || !e) return;
+    if (!e->textCursor().hasSelection()) {
+        emit m_app->toast(t("Select the passage first, then {key} sends it to Darlings", {{"key", "Ctrl+Shift+D"}}));
+        return;
+    }
+    selectionToDarlings(e);
+}
 
 void EditorView::openSidePane() { m_side->open(); }
 

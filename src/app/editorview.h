@@ -70,6 +70,8 @@ public:
     App *app() const { return m_app; }
     AuxPage *auxPage() const { return m_aux; }
     Q_INVOKABLE void openSearch();
+    void selectionToDarlings(ChapterEdit *e); // the drag onto the tab, and Ctrl+Shift+D
+    void darlingFromKeyboard();
     void newChapterAfter(const QString &chId);
     void deleteChapterToDarlings(const QString &chId);
     void chapterMenu(const QString &chId, QPoint globalPos);

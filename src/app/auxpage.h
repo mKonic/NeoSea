@@ -28,8 +28,6 @@ public:
     // the loose cards the side pane holds while the Outline is up
     static QWidget *looseCards(EditorView *view, QWidget *parent);
 
-    // Darlings: words dropped on the tab, kept with where they came from
-    void addDarling(const QString &chId, const QString &html, const QString &text, const QString &before, const QString &after);
 
 private:
     void buildDarlings();

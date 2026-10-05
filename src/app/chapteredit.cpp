@@ -4,6 +4,8 @@
 #include "core/pagelayout.h"
 #include "core/textdoc.h"
 
+#include <QDrag>
+#include <QPointer>
 #include <QApplication>
 #include <QKeyEvent>
 #include <QMimeData>
@@ -335,8 +337,93 @@ void ChapterEdit::inputMethodEvent(QInputMethodEvent *e)
     QTextEdit::inputMethodEvent(e);
 }
 
+// Dragging the selection is ours, not QTextEdit's: on Wayland the release
+// that ends a drag never reaches the text, which then goes on starting drags,
+// and a drop can't tell which widget the words left, so a move can't be
+// finished by the text that lost them. The words move here, at the drop.
+namespace {
+QPointer<ChapterEdit> s_dragging; // the text a selection is being dragged out of
+}
+
+ChapterEdit *ChapterEdit::draggingFrom() { return s_dragging; }
+
+bool ChapterEdit::inSelection(QPointF viewportPos) const
+{
+    const QTextCursor c = textCursor();
+    if (!c.hasSelection()) return false;
+    const int at = cursorForPosition(viewportPos.toPoint()).position();
+    return at >= c.selectionStart() && at < c.selectionEnd();
+}
+
+void ChapterEdit::mouseMoveEvent(QMouseEvent *e)
+{
+    if (m_dragArmed) {
+        if ((e->buttons() & Qt::LeftButton) && (e->position().toPoint() - m_dragFrom).manhattanLength() > QApplication::startDragDistance()) {
+            m_dragArmed = false;
+            s_dragging = this;
+            auto *drag = new QDrag(this);
+            drag->setMimeData(createMimeDataFromSelection());
+            drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
+            s_dragging = nullptr;
+        }
+        return;
+    }
+    QTextEdit::mouseMoveEvent(e);
+}
+
+void ChapterEdit::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (m_dragArmed) {
+        // a click in the selection, not a drag: the caret goes there
+        m_dragArmed = false;
+        setTextCursor(cursorForPosition(e->position().toPoint()));
+        return;
+    }
+    QTextEdit::mouseReleaseEvent(e);
+}
+
+void ChapterEdit::dropEvent(QDropEvent *e)
+{
+    ChapterEdit *src = s_dragging;
+    if (!src || !src->textCursor().hasSelection()) return QTextEdit::dropEvent(e);
+    QTextCursor sel = src->textCursor();
+    QTextCursor at = cursorForPosition(e->position().toPoint());
+    e->setDropAction(Qt::CopyAction); // the words are moved here: the drag itself takes nothing
+    e->accept();
+    if (src == this && at.position() >= sel.selectionStart() && at.position() <= sel.selectionEnd()) return;
+    const QTextDocumentFragment words = sel.selection();
+    // a paragraph the words left empty doesn't stay behind as a blank line
+    auto clearShell = [](QTextCursor &c, const QTextCursor &keep) {
+        QTextBlock b = c.block();
+        if (c.document()->blockCount() > 1 && b != keep.block() && edit::isBlank(b)) edit::removeParagraph(b);
+    };
+    if (src == this) {
+        // one step back: the cursor at the drop keeps its place as the words leave
+        sel.beginEditBlock();
+        sel.removeSelectedText();
+        clearShell(sel, at);
+        at.insertFragment(words);
+        sel.endEditBlock();
+    } else {
+        at.insertFragment(words);
+        sel.beginEditBlock();
+        sel.removeSelectedText();
+        clearShell(sel, QTextCursor());
+        sel.endEditBlock();
+        src->setTextCursor(sel);
+    }
+    setTextCursor(at);
+    setFocus();
+}
+
 void ChapterEdit::mousePressEvent(QMouseEvent *e)
 {
+    if (e->button() == Qt::LeftButton && !(e->modifiers() & Qt::ShiftModifier) && inSelection(e->position())) {
+        m_dragArmed = true;
+        m_dragFrom = e->position().toPoint();
+        setFocus();
+        return;
+    }
     m_enterRun = 0;
     QTextEdit::mousePressEvent(e);
     // clicking a ghost outline note selects it, ready to be written over

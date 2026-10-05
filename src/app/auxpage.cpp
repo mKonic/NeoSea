@@ -1,5 +1,7 @@
 #include "app/auxpage.h"
 
+#include "core/darlings.h"
+
 #include "app/app.h"
 #include "app/editorview.h"
 #include "app/outlineboard.h"
@@ -171,23 +173,6 @@ void AuxPage::refresh()
 
 QWidget *AuxPage::looseCards(EditorView *view, QWidget *parent) { return OutlineBoard::looseCards(view, parent); }
 
-void AuxPage::addDarling(const QString &chId, const QString &html, const QString &text, const QString &before, const QString &after)
-{
-    BookSession *s = m_view->app()->session();
-    if (!s) return;
-    QJsonArray d = s->darlings();
-    d.append(QJsonObject{{"id", "d-" + QString::number(QDateTime::currentMSecsSinceEpoch(), 36)},
-                         {"html", html},
-                         {"text", text.left(2000)},
-                         {"chapterId", chId},
-                         {"chapterLabel", s->order().contains(chId) ? chapterName(chId, s->book()) : QString()},
-                         {"before", before},
-                         {"after", after},
-                         {"date", isoNow()}});
-    s->darlings() = d;
-    s->saveDarlings();
-}
-
 void AuxPage::buildDarlings()
 {
     while (QLayoutItem *item = m_darlings->takeAt(0)) {
@@ -267,18 +252,8 @@ void AuxPage::restoreDarling(const QString &id)
     if (!e) return;
     // back where it was cut, found by the words around the cut
     QTextDocument *docu = e->document();
-    const QString plain = docu->toPlainText();
-    const QString before = d.value("before").toString(), after = d.value("after").toString();
-    int pos = -1;
-    if (!before.isEmpty() && !after.isEmpty()) {
-        const int i = int(plain.indexOf(before + after));
-        if (i >= 0) pos = i + int(before.size());
-    }
-    if (pos < 0 && !before.isEmpty()) {
-        const int i = int(plain.lastIndexOf(before));
-        if (i >= 0) pos = i + int(before.size());
-    }
-    if (pos < 0 && !after.isEmpty()) pos = int(plain.indexOf(after));
+    const int at = darlings::findPosition(darlings::bodyPlain(*docu), d.value("anchorPrefix").toString(), d.value("anchorSuffix").toString());
+    const int pos = at >= 0 ? darlings::toDocPos(*docu, at) : -1;
     const bool found = pos >= 0;
     QTextCursor c(docu);
     c.setPosition(found ? pos : docu->characterCount() - 1);

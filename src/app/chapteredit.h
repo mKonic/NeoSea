@@ -50,6 +50,8 @@ public:
     void focusEnd();
     void placeCaret(int block, int offset);
     QPair<int, int> caretAddress() const; // block number, offset in it
+    // the text a selection is being dragged out of, while it is
+    static ChapterEdit *draggingFrom();
 
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override { return sizeHint(); }
@@ -61,6 +63,9 @@ protected:
     void keyPressEvent(QKeyEvent *e) override;
     void inputMethodEvent(QInputMethodEvent *e) override;
     void mousePressEvent(QMouseEvent *e) override;
+    void mouseReleaseEvent(QMouseEvent *e) override;
+    void mouseMoveEvent(QMouseEvent *e) override;
+    void dropEvent(QDropEvent *e) override;
     void focusInEvent(QFocusEvent *e) override;
     void resizeEvent(QResizeEvent *e) override;
     bool canInsertFromMimeData(const QMimeData *source) const override;
@@ -77,6 +82,9 @@ private:
     QString m_chId;
     PageLayout *m_layout;
     int m_enterRun = 0;
+    bool m_dragArmed = false; // pressed in the selection: a drag, or a click
+    QPoint m_dragFrom;
+    bool inSelection(QPointF viewportPos) const;
     int m_breakRun = 0;
     bool m_loading = false;
     edit::Undoable m_just;
