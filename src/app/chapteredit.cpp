@@ -189,6 +189,8 @@ void ChapterEdit::keyPressEvent(QKeyEvent *e)
             m_breakRun--;
             return;
         }
+        // nothing of the chapter's own to take back: the structure's last change is
+        if (!document()->isUndoAvailable() && m_host->structuralUndo()) return;
         QTextEdit::keyPressEvent(e);
         return;
     }

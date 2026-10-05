@@ -27,6 +27,7 @@ class SidePane;
 class AuxPage;
 class TitleSheet;
 class WalkNote;
+class SearchBar;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -67,6 +68,8 @@ public:
 
     // used by the panes and the menus
     App *app() const { return m_app; }
+    AuxPage *auxPage() const { return m_aux; }
+    Q_INVOKABLE void openSearch();
     void newChapterAfter(const QString &chId);
     void deleteChapterToDarlings(const QString &chId);
     void chapterMenu(const QString &chId, QPoint globalPos);
@@ -112,6 +115,7 @@ private:
     QStackedWidget *m_stack;  // manuscript, or a tab's own page
     AuxPage *m_aux = nullptr;
     WalkNote *m_walk;
+    SearchBar *m_search;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;

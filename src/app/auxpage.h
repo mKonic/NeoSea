@@ -24,6 +24,7 @@ public:
     void flush();
     void refresh();
     OutlineBoard *outline() const { return m_outline; }
+    QTextEdit *notesEdit() const { return m_notes; }
     // the loose cards the side pane holds while the Outline is up
     static QWidget *looseCards(EditorView *view, QWidget *parent);
 

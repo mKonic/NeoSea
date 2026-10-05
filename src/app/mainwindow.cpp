@@ -371,6 +371,11 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
             m_editor->gotoChapter(e->key() == Qt::Key_Down ? 1 : -1);
             return;
         }
+        // outside the text, Ctrl+Z belongs to the structure
+        if (e->key() == Qt::Key_Z && !(e->modifiers() & Qt::ShiftModifier)) {
+            m_editor->structuralUndo();
+            return;
+        }
         if (e->key() == Qt::Key_PageDown || e->key() == Qt::Key_PageUp) {
             m_editor->gotoChapter(e->key() == Qt::Key_PageDown ? 1 : -1);
             return;

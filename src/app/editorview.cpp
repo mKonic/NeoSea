@@ -3,6 +3,7 @@
 #include "app/app.h"
 #include "app/auxpage.h"
 #include "app/outlineboard.h"
+#include "app/searchbar.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
 #include "app/navpane.h"
@@ -270,6 +271,8 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
     m_stack->addWidget(m_scroll);
     m_aux = new AuxPage(this);
     m_stack->addWidget(m_aux);
+    m_search = new SearchBar(this);
+    m_search->watch(m_aux->notesEdit());
     connect(m_scroll->verticalScrollBar(), &QScrollBar::valueChanged, this, [this] { m_scrollTimer.start(120); });
     connect(m_scroll->verticalScrollBar(), &QScrollBar::rangeChanged, this, [this] { applyPendingScroll(); });
     m_scrollTimer.setSingleShot(true);
@@ -329,6 +332,7 @@ void EditorView::resizeEvent(QResizeEvent *e)
     QWidget::resizeEvent(e);
     layoutOverlays();
     applyLook();
+    if (!m_search->isHidden()) m_search->place();
 }
 
 void EditorView::layoutOverlays()
@@ -539,6 +543,7 @@ void EditorView::rebuildChapters()
             sheet->edit->loadHtml(html);
             sheet->edit->setVisible(chapterKind(chId, b) != "contents");
             m_walk->watch(sheet->edit);
+            m_search->watch(sheet->edit);
             connect(sheet->titleEdit, &QLineEdit::editingFinished, this, [this, sheet] {
                 BookSession *s = m_app->session();
                 if (!s) return;
@@ -655,6 +660,7 @@ void EditorView::showTab(const QString &tab)
     }
     m_side->setOutlineMode(tab == "outline");
     m_walk->queue();
+    m_search->retab();
 }
 
 void EditorView::syncAll()
@@ -1230,6 +1236,8 @@ void EditorView::refreshFromDisk()
     else if (r.displaced) emit m_app->toast(t("Updated from your other device — the text it replaced is in Darlings"), 8000);
     else emit m_app->toast(t("Updated from your other device"));
 }
+
+void EditorView::openSearch() { m_search->open(); }
 
 void EditorView::openSidePane() { m_side->open(); }
 
