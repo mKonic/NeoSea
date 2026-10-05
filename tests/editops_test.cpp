@@ -184,3 +184,25 @@ TEST(Format, ToggleAndAlign)
     edit::setAlignment(p.c, Qt::AlignHCenter);
     EXPECT_EQ(p.html(), "<p style=\"text-align: center;\">a</p><p class=\"scene-break\">***</p><p>b</p>");
 }
+
+TEST(Breaks, TypingNeverLandsOnAStarLine)
+{
+    Page p("<p class=\"scene-break\">***</p><p>Words</p>");
+    p.c.setPosition(0);
+    ASSERT_TRUE(edit::stepOffBreak(p.c));
+    p.c.insertText("Above");
+    EXPECT_EQ(p.html(), "<p>Above</p><p class=\"scene-break\">***</p><p>Words</p>");
+    Page q("<p>One</p><p class=\"scene-break\">***</p><p>Two</p>");
+    q.c.setPosition(q.d.findBlockByNumber(1).position() + 2);
+    ASSERT_TRUE(edit::stepOffBreak(q.c));
+    q.c.insertText("Mid");
+    EXPECT_EQ(q.html(), "<p>One</p><p class=\"scene-break\">***</p><p>Mid</p><p>Two</p>");
+}
+
+TEST(Breaks, ProseMergedIntoABreakIsHealed)
+{
+    QTextDocument d;
+    doc::loadHtml(d, "<p class=\"scene-break\">***</p><p class=\"scene-break\">Words***</p>");
+    EXPECT_EQ(edit::healBreaks(d), 1);
+    EXPECT_EQ(doc::html(d), "<p class=\"scene-break\">***</p><p>Words***</p>");
+}

@@ -135,6 +135,50 @@ void removeParagraph(QTextBlock b)
     }
 }
 
+bool stepOffBreak(QTextCursor &c)
+{
+    QTextBlock b = c.block();
+    if (!has(b, "scene-break")) return false;
+    if (c.positionInBlock() == 0 && b.previous().isValid() == false) {
+        // the chapter opens on a break: a line above it
+        QTextCursor at(b);
+        at.insertBlock();
+        QTextBlock fresh = at.block().previous();
+        resetParagraph(fresh, {});
+        setBlockText(fresh, QString());
+        c.setPosition(fresh.position());
+        c.setCharFormat(QTextCharFormat());
+        return true;
+    }
+    if (c.positionInBlock() == 0) {
+        c.setPosition(b.previous().position() + b.previous().length() - 1);
+        return true;
+    }
+    QTextCursor at(b);
+    at.movePosition(QTextCursor::EndOfBlock);
+    at.insertBlock(QTextBlockFormat(), QTextCharFormat());
+    resetParagraph(at.block(), {});
+    c.setPosition(at.position());
+    c.setCharFormat(QTextCharFormat());
+    return true;
+}
+
+int healBreaks(QTextDocument &d)
+{
+    int n = 0;
+    for (QTextBlock b = d.begin(); b.isValid(); b = b.next()) {
+        if (!has(b, "scene-break") || b.text().trimmed() == "***") continue;
+        QStringList l = cls(b);
+        l.removeAll("scene-break");
+        QTextBlockFormat f = b.blockFormat();
+        f.setProperty(doc::ParaClass, l.join(' '));
+        f.setAlignment(Qt::AlignLeft | Qt::AlignAbsolute);
+        QTextCursor(b).setBlockFormat(f);
+        n++;
+    }
+    return n;
+}
+
 QString textBefore(const QTextCursor &c)
 {
     return c.block().text().left(c.positionInBlock());

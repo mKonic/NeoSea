@@ -90,5 +90,11 @@ void romanize(QTextBlock b, QTextCursor *typing = nullptr);
 void resetParagraph(QTextBlock b, const QStringList &classes);
 // removes a paragraph whole, leaving its neighbours' formats as they were
 void removeParagraph(QTextBlock b);
+// Words typed on a *** line go on a line of their own: before it at its
+// start, after it anywhere else. Moves the cursor there; true if it did.
+bool stepOffBreak(QTextCursor &c);
+// A *** line holding anything but *** is prose that got merged into a
+// break: it becomes prose again. Returns how many were healed.
+int healBreaks(QTextDocument &d);
 
 } // namespace neosea::edit

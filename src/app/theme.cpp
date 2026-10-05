@@ -46,7 +46,7 @@ Theme Theme::byName(const QString &name)
 QString Theme::styleSheet() const
 {
     return QStringLiteral(R"(
-QWidget { color: %1; font-size: 13px; }
+QWidget { color: %1; }
 QMainWindow, #room { background: %2; }
 QToolTip { background: %3; color: %1; border: 1px solid %4; padding: 4px 6px; }
 QDialog { background: %3; }

@@ -19,7 +19,7 @@ local function pkg(what, mods)
     return (out:gsub("%-I/", "-isystem /"))
 end
 local CORE_PKGS = "Qt6Core Qt6Gui Qt6PrintSupport icu-uc icu-i18n libzip hunspell"
-local APP_PKGS = CORE_PKGS .. " Qt6Widgets Qt6Svg"
+local APP_PKGS = CORE_PKGS .. " Qt6Widgets Qt6Svg Qt6Network"
 local have_tts = os.outputof("pkg-config --exists Qt6TextToSpeech && echo yes") == "yes"
 if have_tts then APP_PKGS = APP_PKGS .. " Qt6TextToSpeech" end
 
