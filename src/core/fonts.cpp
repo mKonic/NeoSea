@@ -26,8 +26,13 @@ int registerBundledFonts()
     if (loaded >= 0) return loaded;
     loaded = 0;
     const QDir d(resourcesDir() + "/fonts");
-    for (const QString &f : d.entryList({"*.woff2", "*.woff", "*.otf", "*.ttf"}, QDir::Files))
+    for (const QString &f : d.entryList({"*.woff2", "*.woff", "*.otf", "*.ttf"}, QDir::Files)) {
+        // Cyrillic-only cuts registered under the same family as the Latin
+        // ones would win the match for Latin text too (CSS keeps them apart
+        // with unicode-range, which Qt has no notion of)
+        if (f.startsWith("oswald-cyrillic") || f.startsWith("playfair-display-cyrillic")) continue;
         if (QFontDatabase::addApplicationFont(d.filePath(f)) >= 0) loaded++;
+    }
     return loaded;
 }
 
