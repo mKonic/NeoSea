@@ -6,6 +6,7 @@
 
 #include "core/booksession.h"
 #include "core/shelves.h"
+#include "core/spell.h"
 #include "core/storage.h"
 
 #include <QHash>
@@ -59,11 +60,21 @@ public:
     // writing language: the spellcheck dictionary picked, else the interface's
     QString writingLanguage() const;
 
+    // the spellcheck dictionary: the one picked in Edit → Spellcheck Language,
+    // else the interface's. It loads off the main thread; until then every
+    // word is fine.
+    spell::Speller &speller() { return *m_speller; }
+    QString spellLanguage() const;
+    void loadSpeller();
+    void setSpellLanguage(const QString &code);
+    void learnWord(const QString &word);
+
 signals:
     void libraryChanged();
     void toast(const QString &message, int ms = 4000);
     void bookOpened();
     void bookClosed();
+    void spellerChanged();
 
 private:
     Library m_lib;
@@ -71,6 +82,7 @@ private:
     QHash<QString, QJsonObject> m_metaCache;
     std::unique_ptr<BookSession> m_session;
     int m_generation = 0;
+    std::shared_ptr<spell::Speller> m_speller = std::make_shared<spell::Speller>();
 };
 
 } // namespace neosea

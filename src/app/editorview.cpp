@@ -4,6 +4,7 @@
 #include "app/auxpage.h"
 #include "app/outlineboard.h"
 #include "app/searchbar.h"
+#include "app/spellpass.h"
 #include "core/darlings.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
@@ -278,6 +279,10 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
     m_stack->addWidget(m_aux);
     m_search = new SearchBar(this);
     m_search->watch(m_aux->notesEdit());
+    m_spell = new SpellPass(this);
+    m_spell->watch(m_aux->notesEdit());
+    m_aux->notesEdit()->installEventFilter(this);
+    m_aux->notesEdit()->viewport()->installEventFilter(this);
     connect(m_scroll->verticalScrollBar(), &QScrollBar::valueChanged, this, [this] { m_scrollTimer.start(120); });
     connect(m_scroll->verticalScrollBar(), &QScrollBar::rangeChanged, this, [this] { applyPendingScroll(); });
     m_scrollTimer.setSingleShot(true);
@@ -357,6 +362,9 @@ void EditorView::layoutOverlays()
 
 bool EditorView::eventFilter(QObject *o, QEvent *e)
 {
+    // the Notes page: checked when the caret comes, its flagged words' menu
+    if (o == m_aux->notesEdit() && e->type() == QEvent::FocusIn) m_spell->here(m_aux->notesEdit());
+    if (o == m_aux->notesEdit()->viewport() && e->type() == QEvent::ContextMenu && m_spell->menu(m_aux->notesEdit(), static_cast<QContextMenuEvent *>(e))) return true;
     // words dragged out of a chapter onto the Darlings tab: the cut is made
     // here, at the drop, so the text edit finds nothing left to move
     if (o == m_tabs.value("darlings") && (e->type() == QEvent::DragEnter || e->type() == QEvent::DragMove || e->type() == QEvent::Drop || e->type() == QEvent::DragLeave)) {
@@ -569,6 +577,7 @@ void EditorView::rebuildChapters()
             sheet->edit->setVisible(chapterKind(chId, b) != "contents");
             m_walk->watch(sheet->edit);
             m_search->watch(sheet->edit);
+            m_spell->watch(sheet->edit);
             connect(sheet->titleEdit, &QLineEdit::editingFinished, this, [this, sheet] {
                 BookSession *s = m_app->session();
                 if (!s) return;
@@ -780,6 +789,7 @@ void EditorView::chapterEdited(ChapterEdit *e)
 void EditorView::chapterFocused(ChapterEdit *e)
 {
     m_current = e->chId();
+    m_spell->here(e);
     m_nav->highlight(m_current);
     scheduleCounters();
 }
@@ -1263,6 +1273,10 @@ void EditorView::refreshFromDisk()
 }
 
 void EditorView::openSearch() { m_search->open(); }
+
+void EditorView::toggleSpellcheck() { m_spell->toggle(); }
+
+bool EditorView::spellMenu(ChapterEdit *e, QContextMenuEvent *ev) { return m_spell->menu(e, ev); }
 
 void EditorView::selectionToDarlings(ChapterEdit *e)
 {

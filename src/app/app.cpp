@@ -2,19 +2,25 @@
 
 #include "core/bookmodel.h"
 #include "core/chapter.h"
+#include "core/fonts.h"
 #include "core/i18n.h"
 #include "core/importer.h"
 #include "core/screenplay.h"
 #include "core/typing.h"
 
+#include <QCoreApplication>
 #include <QDate>
 #include <QJsonArray>
+#include <QPointer>
+
+#include <thread>
 
 namespace neosea {
 
 App::App(const QString &libraryDir, QObject *parent) : QObject(parent), m_lib(libraryDir)
 {
     reloadLibrary();
+    loadSpeller();
 }
 
 void App::reloadLibrary()
@@ -227,6 +233,51 @@ void App::closeBook()
     m_metaCache.remove(m_session->id());
     m_session.reset();
     emit bookClosed();
+}
+
+QString App::spellLanguage() const
+{
+    const QString chosen = m_library.value("spellLanguage").toString();
+    for (const spell::Language &l : spell::languages())
+        if (l.code == chosen) return chosen;
+    return spell::defaultLanguage(I18n::locale());
+}
+
+void App::loadSpeller()
+{
+    const QString code = spellLanguage();
+    const QString base = spell::dictionaryBase(resourcesDir(), code);
+    QStringList custom;
+    for (const auto &v : m_library.value("customWords").toArray()) custom << v.toString();
+    std::thread([speller = m_speller, base, code, custom, self = QPointer<App>(this)] {
+        const bool ok = speller->load(base, code, custom);
+        QMetaObject::invokeMethod(qApp, [self, ok, code] {
+            if (!self) return;
+            if (!ok) self->m_lib.logError("spell", "dictionary for " + code + " would not load");
+            emit self->spellerChanged();
+        });
+    }).detach();
+}
+
+void App::setSpellLanguage(const QString &code)
+{
+    const QString base = spell::dictionaryBase(resourcesDir(), code);
+    if (base.isEmpty()) {
+        emit toast(t("That dictionary would not load"));
+        return;
+    }
+    m_library.insert("spellLanguage", code);
+    writeLibrary();
+    loadSpeller();
+}
+
+void App::learnWord(const QString &word)
+{
+    QJsonArray words = m_library.value("customWords").toArray();
+    if (!words.contains(word)) words.append(word);
+    m_library.insert("customWords", words);
+    writeLibrary();
+    m_speller->add(word);
 }
 
 QString App::writingLanguage() const

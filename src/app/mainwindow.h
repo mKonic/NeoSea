@@ -39,6 +39,7 @@ private:
     void applyTheme();
     void showHelp();
     void showAbout();
+    void changeSpellLanguage(const QString &code);
     void chooseLibraryFolder();
     void reshelve();
     void setLibraryValue(const QString &key, const QJsonValue &v);

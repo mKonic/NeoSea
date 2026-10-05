@@ -163,6 +163,18 @@ void MainWindow::buildMenus()
     add(editMenu, t("Find & Replace").replace('&', "&&"), QKeySequence("Ctrl+F"), [this] {
         if (m_views->currentWidget() == m_editor) QMetaObject::invokeMethod(m_editor, "openSearch");
     });
+    add(editMenu, t("Spellcheck Pass"), QKeySequence("Ctrl+;"), [this] {
+        if (m_views->currentWidget() == m_editor) m_editor->toggleSpellcheck();
+    });
+    QMenu *spellMenu = editMenu->addMenu(t("Spellcheck Language"));
+    auto *spellGroup = new QActionGroup(spellMenu);
+    for (const spell::Language &l : spell::languages()) {
+        QAction *a = spellMenu->addAction(l.label);
+        a->setCheckable(true);
+        a->setChecked(m_app->spellLanguage() == l.code);
+        spellGroup->addAction(a);
+        connect(a, &QAction::triggered, this, [this, code = l.code] { changeSpellLanguage(code); });
+    }
     editMenu->addSeparator();
     add(editMenu, t("Placeholder"), QKeySequence("Ctrl+Shift+X"), [this] {
         if (m_views->currentWidget() == m_editor && m_editor->tab() == "manuscript") m_editor->insertPlaceholder();
@@ -717,6 +729,20 @@ void MainWindow::firstRun()
     m_app->writeLibrary();
     m_shelf->rebuild();
     buildMenus();
+}
+
+void MainWindow::changeSpellLanguage(const QString &code)
+{
+    // Edit → Spellcheck Language: the dictionary changes, the choice stays with the library
+    if (spell::dictionaryBase(resourcesDir(), code).isEmpty()) {
+        emit m_app->toast(t("That dictionary would not load"));
+        return;
+    }
+    m_app->setSpellLanguage(code);
+    static const QHash<QString, const char *> names{{"en-US", "US English"}, {"en-GB", "UK English"}, {"en-CA", "Canadian English"}, {"en-AU", "Australian English"},
+                                                    {"fr", "French"}, {"es", "Spanish"}, {"de", "German"}, {"nl", "Dutch"}, {"pl", "Polish"},
+                                                    {"pt-BR", "Brazilian Portuguese"}, {"ro", "Romanian"}, {"ru", "Russian"}};
+    emit m_app->toast(t("Spellcheck: {lang}", {{"lang", names.contains(code) ? t(names.value(code)) : code}}));
 }
 
 } // namespace neosea

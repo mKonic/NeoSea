@@ -28,6 +28,7 @@ class AuxPage;
 class TitleSheet;
 class WalkNote;
 class SearchBar;
+class SpellPass;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -65,6 +66,8 @@ public:
     void chapterEdited(ChapterEdit *e) override;
     void chapterFocused(ChapterEdit *e) override;
     bool scriptKey(ChapterEdit *e, QKeyEvent *k) override;
+    bool spellMenu(ChapterEdit *e, QContextMenuEvent *ev) override;
+    void toggleSpellcheck();
 
     // used by the panes and the menus
     App *app() const { return m_app; }
@@ -118,6 +121,7 @@ private:
     AuxPage *m_aux = nullptr;
     WalkNote *m_walk;
     SearchBar *m_search;
+    SpellPass *m_spell;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;

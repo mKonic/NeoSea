@@ -3,6 +3,7 @@
 #include "app/app.h"
 #include "app/auxpage.h"
 #include "app/editorview.h"
+#include "app/decorations.h"
 #include "app/theme.h"
 #include "core/booksession.h"
 #include "core/i18n.h"
@@ -152,14 +153,14 @@ void SearchBar::close()
     m_idx = -1;
     m_query.clear();
     paint();
-    for (QTextEdit *e : roots()) e->setExtraSelections({});
+    for (QTextEdit *e : roots()) deco::set(e, "search", {});
 }
 
 void SearchBar::run()
 {
     const QString q = m_find->text();
     for (const Hit &h : m_hits)
-        if (h.ed) h.ed->setExtraSelections({});
+        if (h.ed) deco::set(h.ed, "search", {});
     m_hits.clear();
     m_idx = -1;
     m_query = q;
@@ -198,7 +199,7 @@ void SearchBar::paint()
         x.format = i == m_idx ? cur : all;
         per[h.ed] << x;
     }
-    for (QTextEdit *e : roots()) e->setExtraSelections(per.value(e));
+    for (QTextEdit *e : roots()) deco::set(e, "search", per.value(e));
 }
 
 void SearchBar::reveal(QTextEdit *ed, int pos)

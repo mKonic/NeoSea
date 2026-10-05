@@ -416,6 +416,11 @@ void ChapterEdit::dropEvent(QDropEvent *e)
     setFocus();
 }
 
+void ChapterEdit::contextMenuEvent(QContextMenuEvent *e)
+{
+    if (!m_host->spellMenu(this, e)) QTextEdit::contextMenuEvent(e);
+}
+
 void ChapterEdit::mousePressEvent(QMouseEvent *e)
 {
     if (e->button() == Qt::LeftButton && !(e->modifiers() & Qt::ShiftModifier) && inSelection(e->position())) {

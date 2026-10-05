@@ -29,6 +29,7 @@ public:
     virtual void chapterEdited(ChapterEdit *e) = 0;
     virtual void chapterFocused(ChapterEdit *e) = 0;
     virtual bool scriptKey(ChapterEdit *e, QKeyEvent *k) = 0;
+    virtual bool spellMenu(ChapterEdit *, QContextMenuEvent *) { return false; } // a flagged word's suggestions
 };
 
 class ChapterEdit : public QTextEdit {
@@ -66,6 +67,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e) override;
     void mouseMoveEvent(QMouseEvent *e) override;
     void dropEvent(QDropEvent *e) override;
+    void contextMenuEvent(QContextMenuEvent *e) override;
     void focusInEvent(QFocusEvent *e) override;
     void resizeEvent(QResizeEvent *e) override;
     bool canInsertFromMimeData(const QMimeData *source) const override;

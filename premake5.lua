@@ -73,6 +73,8 @@ project "neosea"
     files { "src/app/**.h", "src/app/**.cpp" }
     links { "neosea-core" }
     prebuildcommands { '"%{wks.location}/../scripts/moc.sh" "%{wks.location}/moc"' }
+    -- the spellcheck dictionaries, once; offline, the system's hunspell ones stand in
+    prebuildcommands { '"%{wks.location}/../scripts/fetch-dictionaries.sh" || echo "neosea: dictionaries not fetched, the system ones will be used"' }
     buildoptions { pkg("--cflags", APP_PKGS) }
     linkoptions { pkg("--libs", APP_PKGS) }
     if have_tts then defines { "NEOSEA_HAVE_TTS=1" } end
