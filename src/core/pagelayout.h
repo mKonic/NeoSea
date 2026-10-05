@@ -33,6 +33,7 @@ struct PageStyle {
     QColor muted = QColor("#888888");
     QColor ghost = QColor("#a9a294");
     QColor caret = QColor("#1c1c1c");
+    QColor paper = QColor("#fbfaf7");
     // a script's page breaks: block number -> blank lines kept at the foot
     QHash<int, int> scriptBreaks;
 };
@@ -63,6 +64,13 @@ public:
     int spaceBlock() const { return m_spaceBlock; }
     qreal spaceAfter() const { return m_spaceBlock >= 0 ? m_space : 0; }
 
+    // Focus mode: everything faint but one paragraph, or a stretch of it.
+    // block -1 dims the whole page (the caret is elsewhere); length -1 is the
+    // whole paragraph.
+    void setFocus(bool on, int block = -1, int start = 0, int length = -1);
+    bool focusOn() const { return m_focusOn; }
+    QColor faint() const; // the ink focus mode fades the rest to
+
     // Relayout everything now (fonts or style changed)
     void relayout();
 
@@ -82,6 +90,8 @@ private:
     QList<BlockGeom> m_geom;
     qreal m_height = 0;
     int m_opening = -1;
+    bool m_focusOn = false;
+    int m_focusBlock = -1, m_focusStart = 0, m_focusLength = -1;
     int m_spaceBlock = -1;
     qreal m_space = 0;
     QRectF m_capRect;

@@ -29,6 +29,7 @@ class TitleSheet;
 class WalkNote;
 class SearchBar;
 class SpellPass;
+class WritingModes;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -72,6 +73,8 @@ public:
     // used by the panes and the menus
     App *app() const { return m_app; }
     AuxPage *auxPage() const { return m_aux; }
+    QScrollArea *scrollArea() const { return m_scroll; }
+    WritingModes *modes() const { return m_modes; }
     Q_INVOKABLE void openSearch();
     void selectionToDarlings(ChapterEdit *e); // the drag onto the tab, and Ctrl+Shift+D
     void darlingFromKeyboard();
@@ -122,6 +125,7 @@ private:
     WalkNote *m_walk;
     SearchBar *m_search;
     SpellPass *m_spell;
+    WritingModes *m_modes;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;

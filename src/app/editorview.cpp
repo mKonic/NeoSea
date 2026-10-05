@@ -5,6 +5,7 @@
 #include "app/outlineboard.h"
 #include "app/searchbar.h"
 #include "app/spellpass.h"
+#include "app/writingmodes.h"
 #include "core/darlings.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
@@ -280,6 +281,7 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
     m_search = new SearchBar(this);
     m_search->watch(m_aux->notesEdit());
     m_spell = new SpellPass(this);
+    m_modes = new WritingModes(this);
     m_spell->watch(m_aux->notesEdit());
     m_aux->notesEdit()->installEventFilter(this);
     m_aux->notesEdit()->viewport()->installEventFilter(this);
@@ -347,6 +349,7 @@ void EditorView::resizeEvent(QResizeEvent *e)
     layoutOverlays();
     applyLook();
     if (!m_search->isHidden()) m_search->place();
+    m_modes->refresh();
 }
 
 void EditorView::layoutOverlays()
@@ -452,6 +455,7 @@ void EditorView::applyLook()
         st.muted = theme().sceneBreak;
         st.ghost = theme().ghost;
         st.caret = theme().ink;
+        st.paper = theme().paper;
         sheet->edit->pageLayout()->setStyle(st);
         QPalette pal = sheet->edit->palette();
         pal.setColor(QPalette::Text, theme().ink);
@@ -578,6 +582,7 @@ void EditorView::rebuildChapters()
             m_walk->watch(sheet->edit);
             m_search->watch(sheet->edit);
             m_spell->watch(sheet->edit);
+            m_modes->watch(sheet->edit);
             connect(sheet->titleEdit, &QLineEdit::editingFinished, this, [this, sheet] {
                 BookSession *s = m_app->session();
                 if (!s) return;
@@ -596,6 +601,7 @@ void EditorView::rebuildChapters()
         }
     }
     m_rebuilding = false;
+    m_modes->refresh();
     applyLook();
     QTimer::singleShot(0, this, [this, keep] { m_scroll->verticalScrollBar()->setValue(keep); });
     m_nav->rebuild();

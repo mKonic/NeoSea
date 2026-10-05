@@ -4,6 +4,7 @@
 #include "app/appsettings.h"
 #include "app/dialogs.h"
 #include "app/editorview.h"
+#include "app/writingmodes.h"
 #include "app/shelfview.h"
 #include "app/theme.h"
 #include "core/bookmodel.h"
@@ -244,6 +245,10 @@ void MainWindow::buildMenus()
         setLibraryValue("pageZoom", 1);
         m_editor->applyLook();
     });
+    format->addSeparator();
+    QAction *typewriter = add(format, t("Typewriter Scrolling"), QKeySequence("Ctrl+Shift+T"), [this] { m_editor->modes()->toggleTypewriter(); });
+    typewriter->setCheckable(true);
+    connect(format, &QMenu::aboutToShow, typewriter, [this, typewriter] { typewriter->setChecked(m_editor->modes()->typewriter()); });
     if (!script) {
         format->addSeparator();
         add(format, t("Flush Paragraph") + "\tShift+Enter", {}, [this] {
@@ -280,6 +285,22 @@ void MainWindow::buildMenus()
     add(view, t("Keyboard Shortcuts…"), QKeySequence("Ctrl+/"), [this] { showHelp(); });
     view->addSeparator();
     add(view, t("Full Screen"), QKeySequence("Ctrl+Shift+F"), [this] { isFullScreen() ? showNormal() : showFullScreen(); });
+    QMenu *focusMenu = view->addMenu(t("Focus Mode"));
+    add(focusMenu, t("Cycle"), QKeySequence("Ctrl+Shift+O"), [this] {
+        if (m_views->currentWidget() == m_editor) m_editor->modes()->cycleFocus();
+    });
+    focusMenu->addSeparator();
+    auto *focusGroup = new QActionGroup(focusMenu);
+    for (const auto &[label, value] : QList<QPair<QString, QString>>{{t("Sentence"), "sentence"}, {t("Paragraph"), "paragraph"}, {t("Off"), "off"}}) {
+        QAction *a = focusMenu->addAction(label);
+        a->setCheckable(true);
+        focusGroup->addAction(a);
+        connect(a, &QAction::triggered, this, [this, value] { m_editor->modes()->setFocusLevel(value); });
+    }
+    // the ticks follow the level, however it was set
+    connect(focusMenu, &QMenu::aboutToShow, this, [this, focusGroup] {
+        for (QAction *a : focusGroup->actions()) a->setChecked(a->text() == (m_editor->modes()->focusLevel() == "sentence" ? t("Sentence") : m_editor->modes()->focusLevel() == "paragraph" ? t("Paragraph") : t("Off")));
+    });
     view->addSeparator();
     QMenu *page = view->addMenu(t("Page"));
     auto *pageGroup = new QActionGroup(page);

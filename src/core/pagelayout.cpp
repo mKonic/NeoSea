@@ -260,6 +260,24 @@ qreal PageLayout::layoutBlock(const QTextBlock &b, qreal top, int index)
     return y + (index == m_spaceBlock ? m_space : bottomMargin);
 }
 
+void PageLayout::setFocus(bool on, int block, int start, int length)
+{
+    if (on == m_focusOn && block == m_focusBlock && start == m_focusStart && length == m_focusLength) return;
+    m_focusOn = on;
+    m_focusBlock = block;
+    m_focusStart = start;
+    m_focusLength = length;
+    emit update(QRectF(0, 0, 1e6, m_height + 1));
+}
+
+QColor PageLayout::faint() const
+{
+    // NEO's color-mix(ink 28%, paper)
+    const QColor a = m_style.ink, b = m_style.paper;
+    const qreal k = 0.28;
+    return QColor::fromRgbF(a.redF() * k + b.redF() * (1 - k), a.greenF() * k + b.greenF() * (1 - k), a.blueF() * k + b.blueF() * (1 - k));
+}
+
 void PageLayout::setSpaceAfter(int block, qreal px)
 {
     if (block == m_spaceBlock && (block < 0 || qFuzzyCompare(px, m_space))) return;
@@ -289,14 +307,42 @@ void PageLayout::draw(QPainter *painter, const PaintContext &ctx)
             else if (s.format.boolProperty(QTextFormat::FullWidthSelection) && s.cursor.block() == b)
                 sels << QTextLayout::FormatRange{0, blen, s.format};
         }
-        painter->setPen(m_style.ink);
+        // focus mode: the page faint, the paragraph or sentence in ink
+        bool capLit = true;
+        if (m_focusOn) {
+            capLit = false;
+            if (index == m_focusBlock) {
+                QTextCharFormat lit;
+                lit.setForeground(m_style.ink);
+                const int len = m_focusLength < 0 ? blen - 1 : m_focusLength;
+                capLit = m_focusStart == 0 && len > 0;
+                if (len > 0) sels.prepend(QTextLayout::FormatRange{m_focusStart, len, lit});
+            }
+        }
+        // the letters the cap stands for keep no ink, whatever is laid over
+        // them (focus, a selection, a search match): the cap is their ink
+        if (index == m_opening && !m_cap.isEmpty() && m_capRect.isValid()) {
+            const int hidden = int(m_cap.size());
+            QList<QTextLayout::FormatRange> kept;
+            for (QTextLayout::FormatRange r : sels) {
+                const int end = r.start + r.length;
+                if (end <= hidden) continue;
+                if (r.start < hidden) {
+                    r.length = end - hidden;
+                    r.start = hidden;
+                }
+                kept << r;
+            }
+            sels = kept;
+        }
+        painter->setPen(m_focusOn ? faint() : m_style.ink);
         l->draw(painter, QPointF(0, 0), sels, clip);
         if (index == m_opening && !m_cap.isEmpty() && m_capRect.isValid()) {
             QFont capFont(m_style.dropCapFamily);
             capFont.setPixelSize(int(std::lround(3.4 * m_style.fontPx)));
             const QFontMetricsF cm(capFont);
             painter->setFont(capFont);
-            painter->setPen(m_style.ink);
+            painter->setPen(capLit ? m_style.ink : faint());
             painter->drawText(QPointF(m_capRect.left(), m_capRect.top() + cm.ascent()), m_cap);
         }
         if (ctx.cursorPosition >= bpos && ctx.cursorPosition < bpos + blen) {
