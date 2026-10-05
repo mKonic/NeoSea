@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QHash>
+#include <QImage>
 
 namespace neosea {
 
@@ -28,6 +29,18 @@ int registerBundledFonts()
     for (const QString &f : d.entryList({"*.woff2", "*.woff", "*.otf", "*.ttf"}, QDir::Files))
         if (QFontDatabase::addApplicationFont(d.filePath(f)) >= 0) loaded++;
     return loaded;
+}
+
+QPaintDevice *pointDevice()
+{
+    static QImage *img = [] {
+        auto *i = new QImage(1, 1, QImage::Format_ARGB32);
+        const int dpm = int(72 / 0.0254 + 0.5);
+        i->setDotsPerMeterX(dpm);
+        i->setDotsPerMeterY(dpm);
+        return i;
+    }();
+    return img;
 }
 
 QStringList bodyFontChoices()

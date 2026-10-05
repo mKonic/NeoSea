@@ -21,6 +21,7 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QTextFrame>
+#include <QTextTable>
 
 namespace neosea {
 
@@ -71,7 +72,9 @@ QTextBlockFormat blockFmt(Qt::Alignment a = Qt::AlignLeft | Qt::AlignAbsolute)
 {
     QTextBlockFormat b;
     b.setAlignment(a);
-    b.setLineHeight(170, QTextBlockFormat::ProportionalHeight);
+    // CSS line-height 1.7 is 1.7em; a proportional height scales the font's
+    // own line spacing (about 1.2em), so 1.7 / 1.2
+    b.setLineHeight(142, QTextBlockFormat::ProportionalHeight);
     return b;
 }
 
@@ -97,6 +100,7 @@ Built build(const ExportData &d, const HtmlOptions &o, const QSizeF &page, const
     Built out;
     out.doc = std::make_unique<QTextDocument>();
     QTextDocument &doc = *out.doc;
+    doc.documentLayout()->setPaintDevice(pointDevice());
     doc.setPageSize(page);
     doc.setDocumentMargin(kDpi); // one inch all round
     doc.setDefaultFont(QFont(bodyFontFamily(o.bodyFont), 13));
@@ -216,16 +220,24 @@ Built build(const ExportData &d, const HtmlOptions &o, const QSizeF &page, const
         out.contentsBlock = currentBlock(x);
         out.frontBlocks << currentBlock(x);
         x.c.insertText(t("Contents"), headingFmt());
-        const qreal width = page.width() - 2 * kDpi;
+        QList<const TocEntry *> rows;
+        for (const TocEntry &e : d.toc)
+            if (d.contentsChapters || e.type != "chapter") rows << &e;
+        if (rows.isEmpty()) return;
+        QTextTableFormat tf;
+        tf.setBorder(0);
+        tf.setCellPadding(0);
+        tf.setCellSpacing(0);
+        tf.setMargin(0);
+        tf.setLeftMargin(1.5 * em);
+        tf.setRightMargin(1.5 * em);
+        tf.setWidth(QTextLength(QTextLength::PercentageLength, 100));
+        tf.setColumnWidthConstraints({QTextLength(QTextLength::PercentageLength, 88), QTextLength(QTextLength::PercentageLength, 12)});
+        QTextTable *table = x.c.insertTable(int(rows.size()), 2, tf);
         bool prevPage = false;
-        for (const TocEntry &e : d.toc) {
-            if (!d.contentsChapters && e.type == "chapter") continue;
-            QTextBlockFormat lb = blockFmt();
-            lb.setLeftMargin(1.5 * em + 1.6 * em * e.level);
-            lb.setRightMargin(1.5 * em);
-            lb.setTopMargin(e.type == "part" ? 1.1 * em : (e.type == "page" && !prevPage ? 1.2 * em : 0.3 * em));
-            lb.setTabPositions({QTextOption::Tab(width - lb.leftMargin() - lb.rightMargin(), QTextOption::RightTab)});
-            block(x, lb);
+        for (int r = 0; r < rows.size(); ++r) {
+            const TocEntry &e = *rows[r];
+            const qreal top = r == 0 ? 0 : e.type == "part" ? 1.1 * em : (e.type == "page" && !prevPage ? 1.2 * em : 0.3 * em);
             QTextCharFormat f = body;
             if (e.type == "part") {
                 f.setFontPointSize(15);
@@ -233,11 +245,23 @@ Built build(const ExportData &d, const HtmlOptions &o, const QSizeF &page, const
                 f.setFontLetterSpacingType(QFont::AbsoluteSpacing);
                 f.setFontLetterSpacing(2);
             }
+            QTextCursor label = table->cellAt(r, 0).firstCursorPosition();
+            QTextBlockFormat lb = blockFmt();
+            lb.setLeftMargin(1.6 * em * e.level);
+            lb.setTopMargin(top);
+            label.setBlockFormat(lb);
+            label.insertText(e.label, f);
+            QTextCursor num = table->cellAt(r, 1).firstCursorPosition();
+            QTextBlockFormat nb = blockFmt(Qt::AlignRight | Qt::AlignAbsolute);
+            nb.setTopMargin(top);
+            num.setBlockFormat(nb);
             const int pg = pageOf.value(e.num, 0);
-            x.c.insertText(e.label + '\t' + (pg ? QString::number(pg) : QString()), f);
-            out.tocNumberBlock.insert(e.num, currentBlock(x));
+            num.insertText(pg ? QString::number(pg) : QString(), body);
+            out.tocNumberBlock.insert(e.num, num.block().blockNumber());
             prevPage = e.type == "page";
         }
+        x.c = QTextCursor(&doc);
+        x.c.movePosition(QTextCursor::End);
     };
 
     bool placed = !(d.contents && !d.toc.isEmpty());
@@ -352,7 +376,7 @@ Built build(const ExportData &d, const HtmlOptions &o, const QSizeF &page, const
                 blankStart = false;
                 continue;
             }
-            QTextBlockFormat bf = blockFmt(alignOf(p.align, Qt::AlignJustify));
+            QTextBlockFormat bf = blockFmt(alignOf(p.align, Qt::AlignLeft | Qt::AlignAbsolute));
             if (p.poetry) {
                 bf.setLeftMargin(2.5 * em);
                 bf.setRightMargin(2.5 * em);

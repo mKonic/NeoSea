@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+class QPaintDevice;
+
 namespace neosea {
 
 // $NEOSEA_RESOURCES, then <exe>/../share/neosea, then the source tree
@@ -23,5 +25,9 @@ QString bodyFontFamily(const QString &choice);
 // "literary" / "fantasy" / "scifi"; empty for "none"
 QString dropCapFamily(const QString &style);
 inline const QString kScriptFamily = QStringLiteral("Courier Prime");
+
+// A device at 72 dpi, so text is measured in points the way a PDF at 72 dpi
+// draws it (a layout measured at the screen's 96 dpi wraps a third too early)
+QPaintDevice *pointDevice();
 
 } // namespace neosea

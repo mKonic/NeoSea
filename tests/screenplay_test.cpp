@@ -280,3 +280,50 @@ TEST(Screenplay, ParagraphElement)
     setType(p, "action");
     EXPECT_FALSE(p.hasAttr("class"));
 }
+
+#include "core/scriptpdf.h"
+
+#include <QProcess>
+#include <QStandardPaths>
+#include <QTemporaryDir>
+
+TEST(ScriptPdf, LinesMeasureAtTheirWidths)
+{
+    const auto paras = parseChapter("<p class=\"sp-character\">kim</p><p class=\"sp-dialogue\">" + QString("word ").repeated(30)
+                                    + "</p><p>She waits.</p><p class=\"sp-character\">KIM</p><p class=\"sp-dialogue\">Again.</p>");
+    const auto lines = printLines(paras);
+    ASSERT_EQ(lines.size(), 5);
+    EXPECT_TRUE(lines[3].contd);
+    EXPECT_FALSE(lines[0].contd);
+    const auto counts = measureLines(lines);
+    // 150 characters of dialogue at 21.3em (35 columns of Courier): five lines
+    EXPECT_EQ(counts[1], 5);
+    EXPECT_EQ(counts[2], 1);
+}
+
+TEST(ScriptPdf, PrintsTheScriptAsTheIndustryDoes)
+{
+    if (QStandardPaths::findExecutable("pdftotext").isEmpty()) GTEST_SKIP() << "pdftotext not installed";
+    QString src = "<p class=\"sp-heading\">int. galley - night</p><p class=\"sp-character\">kim</p><p class=\"sp-dialogue\">Now.</p>"
+                  "<p>The bell rings.</p><p class=\"sp-character\">KIM</p><p class=\"sp-dialogue\">Again.</p>";
+    for (int i = 0; i < 40; ++i) src += "<p>Action line.</p>";
+    const QByteArray pdf = buildScriptPdf(printLines(parseChapter(src)), {"No Wind", "Written by", "Hugh Howey", "Draft 2", "Agent\nDenver"});
+    ASSERT_TRUE(pdf.startsWith("%PDF"));
+    QTemporaryDir tmp;
+    QFile f(tmp.filePath("s.pdf"));
+    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
+    f.write(pdf);
+    f.close();
+    QProcess p;
+    p.start("pdftotext", {"-layout", tmp.filePath("s.pdf"), "-"});
+    ASSERT_TRUE(p.waitForFinished(20000));
+    const QStringList pages = QString::fromUtf8(p.readAllStandardOutput()).split('\f');
+    ASSERT_GE(pages.size(), 3);
+    EXPECT_TRUE(pages[0].contains("NO WIND"));
+    EXPECT_TRUE(pages[0].contains("Written by"));
+    EXPECT_TRUE(pages[0].contains("Draft 2"));
+    EXPECT_TRUE(pages[1].contains("INT. GALLEY - NIGHT"));
+    EXPECT_TRUE(pages[1].contains("KIM (CONT'D)"));
+    EXPECT_FALSE(pages[1].contains("1."));        // the first page carries no number
+    EXPECT_TRUE(pages[2].trimmed().startsWith("2.")); // the second does, top right
+}
