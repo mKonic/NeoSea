@@ -8,3 +8,4 @@ compile_commands.json
 design/
 PLAN.md
 CHANGELOG.md
+/.clangd

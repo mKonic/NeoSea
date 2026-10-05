@@ -14,7 +14,9 @@ end
 -- Qt, ICU, libzip and hunspell through pkg-config: their paths move between
 -- distributions, and a wrong guess fails at link time naming nothing useful.
 local function pkg(what, mods)
-    return os.outputof("pkg-config " .. what .. " " .. mods .. " 2>/dev/null") or ""
+    local out = os.outputof("pkg-config " .. what .. " " .. mods .. " 2>/dev/null") or ""
+    -- system headers, so their warnings (Qt trips -Wsfinae-incomplete) stay theirs
+    return (out:gsub("%-I/", "-isystem /"))
 end
 local CORE_PKGS = "Qt6Core Qt6Gui Qt6PrintSupport icu-uc icu-i18n libzip hunspell"
 local APP_PKGS = CORE_PKGS .. " Qt6Widgets Qt6Svg"
