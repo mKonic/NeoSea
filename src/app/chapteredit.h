@@ -53,6 +53,8 @@ public:
     QPair<int, int> caretAddress() const; // block number, offset in it
     // the text a selection is being dragged out of, while it is
     static ChapterEdit *draggingFrom();
+    // Edit → Paste and Match Style: the clipboard's words, none of their type
+    void pastePlain();
 
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override { return sizeHint(); }

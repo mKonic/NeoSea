@@ -3,6 +3,7 @@
 #include "app/app.h"
 #include "app/appsettings.h"
 #include "app/dialogs.h"
+#include "app/chapteredit.h"
 #include "app/editorview.h"
 #include "app/goals.h"
 #include "app/writingmodes.h"
@@ -17,6 +18,9 @@
 #include "core/shelves.h"
 #include "neosea_version.h"
 
+#include <QGuiApplication>
+#include <QTextEdit>
+#include <QClipboard>
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
@@ -162,6 +166,42 @@ void MainWindow::buildMenus()
     add(file, t("Quit"), QKeySequence::Quit, [this] { close(); });
 
     QMenu *editMenu = menuBar()->addMenu(t("Edit"));
+    // the standard items act as their keys would in whatever has the caret
+    // (a chapter's own Ctrl+Z, a card's, a field's); outside text, Ctrl+Z
+    // takes back the last change to the book's structure
+    auto keyTo = [this](const QKeySequence &seq) {
+        QWidget *w = QApplication::focusWidget();
+        const QKeyCombination k = seq[0];
+        if (w) {
+            QKeyEvent press(QEvent::KeyPress, int(k.key()), k.keyboardModifiers());
+            QApplication::sendEvent(w, &press);
+            QKeyEvent release(QEvent::KeyRelease, int(k.key()), k.keyboardModifiers());
+            QApplication::sendEvent(w, &release);
+            if (press.isAccepted()) return;
+        }
+        if (seq == QKeySequence::Undo && m_views->currentWidget() == m_editor) m_editor->structuralUndo();
+    };
+    for (const auto &[label, std] : QList<QPair<QString, QKeySequence::StandardKey>>{{t("Undo"), QKeySequence::Undo}, {t("Redo"), QKeySequence::Redo}}) {
+        QAction *a = editMenu->addAction(label);
+        a->setShortcut(std);
+        connect(a, &QAction::triggered, this, [keyTo, std] { keyTo(QKeySequence(std)); });
+    }
+    editMenu->addSeparator();
+    for (const auto &[label, std] : QList<QPair<QString, QKeySequence::StandardKey>>{{t("Cut"), QKeySequence::Cut}, {t("Copy"), QKeySequence::Copy}, {t("Paste"), QKeySequence::Paste}}) {
+        QAction *a = editMenu->addAction(label);
+        a->setShortcut(std);
+        connect(a, &QAction::triggered, this, [keyTo, std] { keyTo(QKeySequence(std)); });
+    }
+    add(editMenu, t("Paste and Match Style"), QKeySequence("Ctrl+Shift+V"), [] {
+        QWidget *w = QApplication::focusWidget();
+        if (auto *c = qobject_cast<ChapterEdit *>(w)) c->pastePlain();
+        else if (auto *te = qobject_cast<QTextEdit *>(w)) te->insertPlainText(QGuiApplication::clipboard()->text());
+        else if (auto *le = qobject_cast<QLineEdit *>(w)) le->insert(QGuiApplication::clipboard()->text());
+    });
+    QAction *selectAll = editMenu->addAction(t("Select All"));
+    selectAll->setShortcut(QKeySequence::SelectAll);
+    connect(selectAll, &QAction::triggered, this, [keyTo] { keyTo(QKeySequence(QKeySequence::SelectAll)); });
+    editMenu->addSeparator();
     add(editMenu, t("Find & Replace").replace('&', "&&"), QKeySequence("Ctrl+F"), [this] {
         if (m_views->currentWidget() == m_editor) QMetaObject::invokeMethod(m_editor, "openSearch");
     });

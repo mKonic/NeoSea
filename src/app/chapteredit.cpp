@@ -4,6 +4,8 @@
 #include "core/pagelayout.h"
 #include "core/textdoc.h"
 
+#include <QGuiApplication>
+#include <QClipboard>
 #include <QDrag>
 #include <QPointer>
 #include <QApplication>
@@ -455,6 +457,13 @@ void ChapterEdit::wheelEvent(QWheelEvent *e)
 bool ChapterEdit::canInsertFromMimeData(const QMimeData *source) const
 {
     return source->hasText() || source->hasHtml();
+}
+
+void ChapterEdit::pastePlain()
+{
+    QMimeData plain;
+    plain.setText(QGuiApplication::clipboard()->text());
+    if (!plain.text().isEmpty()) insertFromMimeData(&plain);
 }
 
 void ChapterEdit::insertFromMimeData(const QMimeData *source)
