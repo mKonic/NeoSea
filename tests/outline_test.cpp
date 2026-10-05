@@ -153,3 +153,17 @@ TEST_F(Book, ListShiftTabMakesTheSectionAChapter)
     EXPECT_EQ(b.notes(newId).first().id, bb);
     EXPECT_EQ(s->chapterHtml("c2"), "<p>Three.</p>");
 }
+
+TEST_F(Book, ListShiftTabTakesTheWritingAlong)
+{
+    Board b(*s);
+    s->book().insert("chapterNotes", QJsonObject{{"c2", "The reunion"}});
+    const auto sec = b.joinChapter("c2", "c1");
+    ASSERT_TRUE(sec);
+    const QString newId = b.sectionNoteToChapter("c1", *sec);
+    EXPECT_EQ(s->order(), (QStringList{"c1", newId}));
+    EXPECT_EQ(s->chapterHtml("c1"), "<p>One.</p><p class=\"scene-break\">***</p><p>Two.</p>");
+    EXPECT_EQ(s->chapterHtml(newId), "<p>Three.</p>");
+    EXPECT_EQ(s->book().value("chapterNotes").toObject().value(newId).toString(), "The reunion");
+    EXPECT_TRUE(b.notes("c1").isEmpty());
+}

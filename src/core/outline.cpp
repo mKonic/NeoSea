@@ -592,6 +592,10 @@ QString Board::sectionNoteToChapter(const QString &chId, const QString &secId)
     for (int i = 0; i < n.size(); ++i)
         if (n[i].id == secId) from = i;
     if (from < 0) return {};
+    // a section with writing takes it along, so ⇧Tab undoes Tab
+    const QList<Segment> segs = segments(chId);
+    for (int i = 0; i < segs.size(); ++i)
+        if (segs[i].id == secId && segs[i].words > 0) return sectionToChapter(chId, i);
     snap("outline section to chapter");
     const Note sec = n[from];
     QList<Note> after = n.mid(from + 1);

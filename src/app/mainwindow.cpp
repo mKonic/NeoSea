@@ -217,14 +217,17 @@ void MainWindow::buildMenus()
     }
     format->addSeparator();
     add(format, t("Larger Text"), QKeySequence("Ctrl+="), [this] {
+        if (m_editor->zoomCards(1)) return;
         setLibraryValue("editorFontSize", std::min(22, m_app->library().value("editorFontSize").toInt(17) + 1));
         m_editor->applyLook();
     });
     add(format, t("Smaller Text"), QKeySequence("Ctrl+-"), [this] {
+        if (m_editor->zoomCards(-1)) return;
         setLibraryValue("editorFontSize", std::max(14, m_app->library().value("editorFontSize").toInt(17) - 1));
         m_editor->applyLook();
     });
     add(format, t("Reset Text Size"), QKeySequence("Ctrl+0"), [this] {
+        if (m_editor->zoomCards(0)) return;
         setLibraryValue("editorFontSize", 17);
         setLibraryValue("pageZoom", 1);
         m_editor->applyLook();

@@ -23,6 +23,7 @@ public:
     void leave();
     void flush();
     void refresh();
+    OutlineBoard *outline() const { return m_outline; }
     // the loose cards the side pane holds while the Outline is up
     static QWidget *looseCards(EditorView *view, QWidget *parent);
 

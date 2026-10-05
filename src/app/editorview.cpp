@@ -2,6 +2,7 @@
 
 #include "app/app.h"
 #include "app/auxpage.h"
+#include "app/outlineboard.h"
 #include "app/dialogs.h"
 #include "app/navpane.h"
 #include "app/sidepane.h"
@@ -464,13 +465,6 @@ void EditorView::openSession()
             });
         }
     }
-    if (!m_app->library().value("hintShown").toBool() && !isScript(s->book())) {
-        m_app->library().insert("hintShown", true);
-        m_app->writeLibrary();
-        QTimer::singleShot(800, this, [this] {
-            emit m_app->toast(t("Enter twice = section break · three times = new chapter · {key} shows everything else", {{"key", "Ctrl+/"}}), 7000);
-        });
-    }
     updateCounters();
     m_flushTimer.start(20000);
     m_refreshTimer.start(30000);
@@ -489,6 +483,7 @@ void EditorView::rebuildChapters()
 {
     BookSession *s = m_app->session();
     m_rebuilding = true;
+    m_wordCache.clear(); // chapters may have traded writing
     const int keep = m_scroll->verticalScrollBar()->value();
     while (QLayoutItem *item = m_sheets->takeAt(0)) {
         if (item->widget()) item->widget()->deleteLater();
@@ -1217,11 +1212,29 @@ void EditorView::refreshFromDisk()
     if (!caret.isEmpty()) restoreCaret(caret);
     m_side->rebuild();
     m_aux->refresh();
-    m_wordCache.clear();
     updateCounters();
     if (r.conflicts) emit m_app->toast(t("This chapter also changed on another device. That version is saved as the chapter after it."), 8000);
     else if (r.displaced) emit m_app->toast(t("Updated from your other device — the text it replaced is in Darlings"), 8000);
     else emit m_app->toast(t("Updated from your other device"));
+}
+
+void EditorView::openSidePane() { m_side->open(); }
+
+void EditorView::refreshSidePane()
+{
+    QTimer::singleShot(0, this, [this] { m_side->rebuild(); });
+}
+
+bool EditorView::zoomCards(int dir)
+{
+    if (m_tab != "outline" || !m_aux->outline()->showingCards()) return false;
+    m_aux->outline()->stepZoom(dir);
+    return true;
+}
+
+void EditorView::refreshOutline()
+{
+    if (m_tab == "outline") m_aux->refresh();
 }
 
 } // namespace neosea

@@ -70,6 +70,10 @@ public:
     void chapterMenu(const QString &chId, QPoint globalPos);
     void insertPlaceholder();
     void scheduleCounters();
+    void openSidePane();
+    void refreshSidePane(); // deferred: the pane's own widgets may be asking
+    void refreshOutline();
+    bool zoomCards(int dir); // the menu's text size steps the cards while they're up
     QJsonObject captureCaret() const;
     void restoreCaret(const QJsonObject &caret);
 
