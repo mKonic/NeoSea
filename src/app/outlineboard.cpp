@@ -817,7 +817,7 @@ void CardView::goToCard(const Cell &c)
     if (b.blockFormat().property(QTextFormat::UserProperty + 1).toString().split(' ').contains("ghost")) cur.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
     e->setFocus();
     e->setTextCursor(cur);
-    e->ensureCursorVisible();
+    v->revealCaret(c.ch);
 }
 
 void CardView::cardMenu(int index, QPoint global)

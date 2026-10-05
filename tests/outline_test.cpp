@@ -167,3 +167,29 @@ TEST_F(Book, ListShiftTabTakesTheWritingAlong)
     EXPECT_EQ(s->book().value("chapterNotes").toObject().value(newId).toString(), "The reunion");
     EXPECT_TRUE(b.notes("c1").isEmpty());
 }
+
+TEST(Outline, TheWalkingNoteFollowsTheSection)
+{
+    const QList<Note> notes{{"s1", "They meet."}, {"s2", "The storm."}};
+    const QList<Para> p = P("<p>Opening.</p><p class=\"scene-break\">***</p><p data-sec-id=\"s1\">They met.</p><p>And talked.</p>"
+                            "<p class=\"scene-break\">***</p><p class=\"ghost\" data-sec-id=\"s2\">The storm.</p>"
+                            "<p class=\"scene-break\">***</p><p data-sec-id=\"s1\">split off</p>");
+    EXPECT_EQ(sectionIdAt(p, notes, 0), "");   // no note on the opening
+    EXPECT_EQ(sectionIdAt(p, notes, 1), "");   // the *** itself
+    EXPECT_EQ(sectionIdAt(p, notes, 2), "s1");
+    EXPECT_EQ(sectionIdAt(p, notes, 3), "s1"); // the whole section, not just its first line
+    EXPECT_EQ(sectionIdAt(p, notes, 5), "");   // a ghost is the note already
+    EXPECT_EQ(sectionIdAt(p, notes, 7), "");   // only the first piece to carry an id owns it
+    EXPECT_EQ(sectionIdAt(p, {}, 2), "");      // a note that's gone
+}
+
+TEST_F(Book, ADismissedNoteStaysDismissedThroughMoves)
+{
+    Board b(*s);
+    const QString sec = b.addSection("c1", 1, "Later");
+    b.dismissNote("c1", sec);
+    b.moveVirtualNote("c1", sec, "c2");
+    ASSERT_EQ(b.notes("c2").size(), 1);
+    EXPECT_TRUE(b.notes("c2").first().dismissed);
+    EXPECT_TRUE(s->book().value("sectionNotes").toObject().value("c2").toArray()[0].toObject().value("dismissed").toBool());
+}

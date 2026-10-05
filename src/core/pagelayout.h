@@ -57,6 +57,12 @@ public:
     // the drop cap's box, in document coordinates, when there is one
     QRectF dropCapRect() const { return m_capRect; }
 
+    // room under one paragraph (the walking note's), in place of its own
+    // bottom margin; block -1 takes it away
+    void setSpaceAfter(int block, qreal px);
+    int spaceBlock() const { return m_spaceBlock; }
+    qreal spaceAfter() const { return m_spaceBlock >= 0 ? m_space : 0; }
+
     // Relayout everything now (fonts or style changed)
     void relayout();
 
@@ -76,6 +82,8 @@ private:
     QList<BlockGeom> m_geom;
     qreal m_height = 0;
     int m_opening = -1;
+    int m_spaceBlock = -1;
+    qreal m_space = 0;
     QRectF m_capRect;
     QString m_cap;
     bool m_laying = false;

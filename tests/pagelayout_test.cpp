@@ -148,3 +148,13 @@ TEST(Layout, ScriptElementsAtTheirMargins)
     const qreal h2 = p.layout->blockBoundingRect(p.block(2)).top();
     EXPECT_NEAR(h2 - h1, 2 * 10, 0.5); // the name's blank line and the name itself
 }
+
+TEST(Layout, TheWalkingNoteGetsRoomUnderItsParagraph)
+{
+    Page p("<p>One.</p><p>Two.</p><p>Three.</p>");
+    const qreal before = p.layout->blockBoundingRect(p.block(2)).top();
+    p.layout->setSpaceAfter(1, 40);
+    EXPECT_NEAR(p.layout->blockBoundingRect(p.block(2)).top(), before + 40, 0.5);
+    p.layout->setSpaceAfter(-1, 0);
+    EXPECT_NEAR(p.layout->blockBoundingRect(p.block(2)).top(), before, 0.5);
+}

@@ -113,14 +113,21 @@ void setDown(QList<Para> &paras, const QList<Para> &ps, std::optional<Para> brk,
 QList<Note> notesOf(const QJsonArray &a)
 {
     QList<Note> out;
-    for (const auto &v : a) out << Note{v.toObject().value("id").toString(), v.toObject().value("text").toString()};
+    for (const auto &v : a) {
+        const QJsonObject o = v.toObject();
+        out << Note{o.value("id").toString(), o.value("text").toString(), o.value("dismissed").toBool()};
+    }
     return out;
 }
 
 QJsonArray toJson(const QList<Note> &notes)
 {
     QJsonArray a;
-    for (const Note &n : notes) a.append(QJsonObject{{"id", n.id}, {"text", n.text}});
+    for (const Note &n : notes) {
+        QJsonObject o{{"id", n.id}, {"text", n.text}};
+        if (n.dismissed) o.insert("dismissed", true);
+        a.append(o);
+    }
     return a;
 }
 
@@ -183,6 +190,30 @@ QList<Note> ordered(const QList<Para> &paras, const QList<Note> &notes)
     for (const Note &n : notes)
         if (!ids.contains(n.id)) rest << n;
     return placed + rest;
+}
+
+QString sectionIdAt(const QList<Para> &paras, const QList<Note> &notes, int i)
+{
+    if (i < 0 || i >= paras.size() || paras[i].hasClass("ghost") || paras[i].hasClass("scene-break")) return {};
+    QSet<QString> ids, claimed;
+    for (const Note &n : notes) ids.insert(n.id);
+    QString id;
+    bool mine = false, ghost = false;
+    for (int k = 0; k < paras.size(); ++k) {
+        const Para &p = paras[k];
+        if (p.hasClass("scene-break")) {
+            if (mine) break;
+            if (!id.isEmpty()) claimed.insert(id);
+            id.clear();
+            ghost = false;
+            continue;
+        }
+        const QString sec = p.attr("data-sec-id");
+        if (id.isEmpty() && ids.contains(sec) && !claimed.contains(sec)) id = sec;
+        if (p.hasClass("ghost")) ghost = true;
+        if (k == i) mine = true;
+    }
+    return mine && !ghost ? id : QString();
 }
 
 int segmentStart(const QList<Para> &paras, int i)
@@ -626,6 +657,15 @@ QString Board::sectionNoteToChapter(const QString &chId, const QString &secId)
     }
     m_s.saveMeta();
     return newId;
+}
+
+void Board::dismissNote(const QString &chId, const QString &secId)
+{
+    QList<Note> n = notes(chId);
+    for (Note &x : n)
+        if (x.id == secId) x.dismissed = true;
+    setNotes(chId, n);
+    m_s.saveMeta();
 }
 
 QJsonArray Board::loose() const { return m_s.book().value("looseCards").toArray(); }

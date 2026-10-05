@@ -257,7 +257,15 @@ qreal PageLayout::layoutBlock(const QTextBlock &b, qreal top, int index)
         // a short opening paragraph still leaves the cap room
         y = std::max(y, capBottom);
     }
-    return y + bottomMargin;
+    return y + (index == m_spaceBlock ? m_space : bottomMargin);
+}
+
+void PageLayout::setSpaceAfter(int block, qreal px)
+{
+    if (block == m_spaceBlock && (block < 0 || qFuzzyCompare(px, m_space))) return;
+    m_spaceBlock = block;
+    m_space = px;
+    relayout();
 }
 
 void PageLayout::draw(QPainter *painter, const PaintContext &ctx)

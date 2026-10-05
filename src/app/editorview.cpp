@@ -3,6 +3,7 @@
 #include "app/app.h"
 #include "app/auxpage.h"
 #include "app/outlineboard.h"
+#include "app/walknote.h"
 #include "app/dialogs.h"
 #include "app/navpane.h"
 #include "app/sidepane.h"
@@ -248,6 +249,7 @@ private:
 EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
 {
     setFocusPolicy(Qt::NoFocus);
+    m_walk = new WalkNote(this);
     m_stack = new QStackedWidget(this);
     m_scroll = new QScrollArea;
     m_scroll->setFrameShape(QFrame::NoFrame);
@@ -536,6 +538,7 @@ void EditorView::rebuildChapters()
             if (html.trimmed().isEmpty()) html = "<p><br></p>";
             sheet->edit->loadHtml(html);
             sheet->edit->setVisible(chapterKind(chId, b) != "contents");
+            m_walk->watch(sheet->edit);
             connect(sheet->titleEdit, &QLineEdit::editingFinished, this, [this, sheet] {
                 BookSession *s = m_app->session();
                 if (!s) return;
@@ -574,22 +577,31 @@ void EditorView::focusChapter(const QString &chId, bool atEnd)
     m_current = chId;
     if (atEnd) e->focusEnd();
     else e->focusStart();
-    // after the sheets have their places (a rebuild lays them out on the next turn)
-    QTimer::singleShot(0, this, [this, chId, atEnd] {
+    if (atEnd) revealCaret(chId);
+    else {
+        // after the sheets have their places (a rebuild lays them out on the next turn)
+        QTimer::singleShot(0, this, [this, chId] {
+            if (!editorFor(chId)) return;
+            m_sheets->activate();
+            m_room->layout()->activate();
+            scrollToSheet(chId);
+        });
+    }
+    m_nav->highlight(chId);
+    updateCounters();
+}
+
+void EditorView::revealCaret(const QString &chId)
+{
+    QTimer::singleShot(0, this, [this, chId] {
         ChapterEdit *e = editorFor(chId);
         if (!e) return;
         m_sheets->activate();
         m_room->layout()->activate();
-        if (atEnd) {
-            const QRect r = e->cursorRect();
-            const QPoint at = e->viewport()->mapTo(m_room, r.center());
-            m_scroll->ensureVisible(at.x(), at.y(), 0, m_scroll->viewport()->height() / 4);
-        } else {
-            scrollToSheet(chId);
-        }
+        const QRect r = e->cursorRect();
+        const QPoint at = e->viewport()->mapTo(m_room, r.center());
+        m_scroll->ensureVisible(at.x(), at.y(), 0, m_scroll->viewport()->height() / 4);
     });
-    m_nav->highlight(chId);
-    updateCounters();
 }
 
 void EditorView::gotoChapter(int step)
@@ -642,6 +654,7 @@ void EditorView::showTab(const QString &tab)
         m_stack->setCurrentWidget(m_aux);
     }
     m_side->setOutlineMode(tab == "outline");
+    m_walk->queue();
 }
 
 void EditorView::syncAll()

@@ -28,6 +28,7 @@ struct Segment {
 
 struct Note {
     QString id, text;
+    bool dismissed = false; // the walking note was put away (the card keeps it)
 };
 
 QList<Note> notesOf(const QJsonArray &a);
@@ -50,6 +51,9 @@ void syncGhosts(QList<Para> &paras, const QList<Note> &notes);
 void placeGhost(QList<Para> &paras, const Note &sec, int before);
 // a ghost leaves, and the *** that set it apart
 void removeGhost(QList<Para> &paras, int index);
+// the note of the section paragraph i is written in, for the walking note:
+// empty on a ghost, a ***, or a section that's still only its ghost
+QString sectionIdAt(const QList<Para> &paras, const QList<Note> &notes, int i);
 // where the section holding paragraph i begins: its *** or the chapter's first line
 int segmentStart(const QList<Para> &paras, int i);
 
@@ -73,6 +77,7 @@ public:
     // line of prose carries the note's id from then on
     QString noteUnwrittenSection(const QString &chId, int segIdx, const QString &text);
     void deleteSectionNote(const QString &chId, const QString &secId);
+    void dismissNote(const QString &chId, const QString &secId);
 
     // a section moves before section `before` of another chapter (-1: the end)
     void moveSection(const QString &fromCh, int segIdx, const QString &toCh, int before);

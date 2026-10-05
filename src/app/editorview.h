@@ -26,6 +26,7 @@ class NavPane;
 class SidePane;
 class AuxPage;
 class TitleSheet;
+class WalkNote;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -39,6 +40,7 @@ public:
     QString currentChapter() const { return m_current; }
     ChapterEdit *editorFor(const QString &chId) const;
     void focusChapter(const QString &chId, bool atEnd = false);
+    void revealCaret(const QString &chId); // the page scrolls to the chapter's caret
     void gotoChapter(int step);
     void showTab(const QString &tab);
     QString tab() const { return m_tab; }
@@ -109,6 +111,7 @@ private:
     QList<ChapterSheet *> m_chapters;
     QStackedWidget *m_stack;  // manuscript, or a tab's own page
     AuxPage *m_aux = nullptr;
+    WalkNote *m_walk;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;
