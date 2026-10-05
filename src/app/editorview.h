@@ -31,6 +31,7 @@ class WalkNote;
 class SearchBar;
 class SpellPass;
 class WritingModes;
+class VimKeys;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -76,6 +77,8 @@ public:
     AuxPage *auxPage() const { return m_aux; }
     QScrollArea *scrollArea() const { return m_scroll; }
     WritingModes *modes() const { return m_modes; }
+    VimKeys *vim() const { return m_vim; }
+    SearchBar *searchBar() const { return m_search; }
     Q_INVOKABLE void openSearch();
     void selectionToDarlings(ChapterEdit *e); // the drag onto the tab, and Ctrl+Shift+D
     void darlingFromKeyboard();
@@ -131,6 +134,7 @@ private:
     SearchBar *m_search;
     SpellPass *m_spell;
     WritingModes *m_modes;
+    VimKeys *m_vim;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;

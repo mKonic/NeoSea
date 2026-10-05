@@ -117,6 +117,7 @@ QList<QTextEdit *> SearchBar::roots() const
 
 void SearchBar::open()
 {
+    m_fromVim = false;
     if (!m_view->app()->session()) {
         emit m_view->app()->toast(t("Open a book first"));
         return;
@@ -133,6 +134,14 @@ void SearchBar::open()
     m_find->setFocus();
     m_find->selectAll();
     retab();
+}
+
+QString SearchBar::query() const { return m_find->text(); }
+
+void SearchBar::openFromVim()
+{
+    open();
+    m_fromVim = true;
 }
 
 void SearchBar::retab()
@@ -287,6 +296,7 @@ void SearchBar::returnToPage()
         ed = m_homeEd;
         pos = std::min(m_homePos, ed->document()->characterCount() - 1);
     }
+    const bool fromVim = std::exchange(m_fromVim, false);
     close();
     if (!ed) return;
     QTextCursor c = ed->textCursor();
@@ -294,6 +304,7 @@ void SearchBar::returnToPage()
     ed->setTextCursor(c);
     ed->setFocus();
     reveal(ed, pos);
+    emit returnedToPage(fromVim);
 }
 
 bool SearchBar::eventFilter(QObject *o, QEvent *e)

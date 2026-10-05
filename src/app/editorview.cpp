@@ -6,6 +6,7 @@
 #include "app/searchbar.h"
 #include "app/spellpass.h"
 #include "app/writingmodes.h"
+#include "app/vimkeys.h"
 #include "core/darlings.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
@@ -128,6 +129,7 @@ private:
     QLineEdit *field(const QString &placeholder, int px, bool bold = false, bool italic = false)
     {
         auto *e = new QLineEdit(this);
+        e->setFocusPolicy(Qt::ClickFocus); // the window coming up gives the caret to the page, not the title
         e->setFrame(false);
         e->setAlignment(Qt::AlignCenter);
         e->setPlaceholderText(placeholder);
@@ -167,6 +169,7 @@ public:
         number = new QLabel(head);
         sep = new QLabel(QStringLiteral("—"), head);
         titleEdit = new QLineEdit(head);
+        titleEdit->setFocusPolicy(Qt::ClickFocus);
         titleEdit->setFrame(false);
         titleEdit->setPlaceholderText(t("add a title"));
         titleEdit->setStyleSheet("QLineEdit { background: transparent; border: none; }");
@@ -282,6 +285,11 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
     m_search->watch(m_aux->notesEdit());
     m_spell = new SpellPass(this);
     m_modes = new WritingModes(this);
+    m_vim = new VimKeys(this);
+    m_vim->watch(m_aux->notesEdit());
+    connect(m_search, &SearchBar::returnedToPage, this, [this](bool fromVim) {
+        if (fromVim) m_vim->rest();
+    });
     m_spell->watch(m_aux->notesEdit());
     m_aux->notesEdit()->installEventFilter(this);
     m_aux->notesEdit()->viewport()->installEventFilter(this);
@@ -583,6 +591,7 @@ void EditorView::rebuildChapters()
             m_walk->watch(sheet->edit);
             m_search->watch(sheet->edit);
             m_spell->watch(sheet->edit);
+            m_vim->watch(sheet->edit);
             m_modes->watch(sheet->edit);
             connect(sheet->titleEdit, &QLineEdit::editingFinished, this, [this, sheet] {
                 BookSession *s = m_app->session();
@@ -701,6 +710,7 @@ void EditorView::showTab(const QString &tab)
     }
     m_side->setOutlineMode(tab == "outline");
     m_walk->queue();
+    if (tab == "manuscript" || tab == "notes") QTimer::singleShot(0, m_vim, [this] { m_vim->rest(); });
     m_search->retab();
 }
 

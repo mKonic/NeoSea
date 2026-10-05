@@ -7,6 +7,7 @@
 #include "app/editorview.h"
 #include "app/goals.h"
 #include "app/writingmodes.h"
+#include "app/vimkeys.h"
 #include "app/shelfview.h"
 #include "app/theme.h"
 #include "core/bookmodel.h"
@@ -342,6 +343,9 @@ void MainWindow::buildMenus()
     connect(focusMenu, &QMenu::aboutToShow, this, [this, focusGroup] {
         for (QAction *a : focusGroup->actions()) a->setChecked(a->text() == (m_editor->modes()->focusLevel() == "sentence" ? t("Sentence") : m_editor->modes()->focusLevel() == "paragraph" ? t("Paragraph") : t("Off")));
     });
+    QAction *vimAction = add(view, t("Vim Keys"), QKeySequence(), [this] { m_editor->vim()->toggle(); });
+    vimAction->setCheckable(true);
+    connect(view, &QMenu::aboutToShow, vimAction, [this, vimAction] { vimAction->setChecked(m_editor->vim()->enabled()); });
     view->addSeparator();
     QMenu *page = view->addMenu(t("Page"));
     auto *pageGroup = new QActionGroup(page);

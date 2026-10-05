@@ -68,6 +68,8 @@ public:
     // block -1 dims the whole page (the caret is elsewhere); length -1 is the
     // whole paragraph.
     void setFocus(bool on, int block = -1, int start = 0, int length = -1);
+    // vim's moving mode turns the caret gold
+    void setCaretColor(const QColor &c); // invalid: the style's own
     bool focusOn() const { return m_focusOn; }
     QColor faint() const; // the ink focus mode fades the rest to
 
@@ -90,6 +92,7 @@ private:
     QList<BlockGeom> m_geom;
     qreal m_height = 0;
     int m_opening = -1;
+    QColor m_caretOverride; // kept over style changes
     bool m_focusOn = false;
     int m_focusBlock = -1, m_focusStart = 0, m_focusLength = -1;
     int m_spaceBlock = -1;

@@ -28,6 +28,11 @@ public:
     void watch(QTextEdit *e); // a page whose edits move the matches
     void place();             // centred at the top of the room
     void retab();             // another tab: Replace only on the manuscript, and find again
+    QString query() const;    // what was last looked for (vim's n and N)
+    void openFromVim();       // /: Esc goes back to moving, at the match
+signals:
+    void returnedToPage(bool fromVim);
+public:
 
 protected:
     bool eventFilter(QObject *o, QEvent *e) override;
@@ -59,6 +64,7 @@ private:
     int m_homePos = 0;
     QTimer m_debounce, m_rerun;
     bool m_replacing = false;
+    bool m_fromVim = false;
 };
 
 } // namespace neosea

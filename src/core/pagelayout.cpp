@@ -270,6 +270,13 @@ void PageLayout::setFocus(bool on, int block, int start, int length)
     emit update(QRectF(0, 0, 1e6, m_height + 1));
 }
 
+void PageLayout::setCaretColor(const QColor &c)
+{
+    if (m_caretOverride == c) return;
+    m_caretOverride = c;
+    emit update(QRectF(0, 0, 1e6, m_height + 1));
+}
+
 QColor PageLayout::faint() const
 {
     // NEO's color-mix(ink 28%, paper)
@@ -346,8 +353,15 @@ void PageLayout::draw(QPainter *painter, const PaintContext &ctx)
             painter->drawText(QPointF(m_capRect.left(), m_capRect.top() + cm.ascent()), m_cap);
         }
         if (ctx.cursorPosition >= bpos && ctx.cursorPosition < bpos + blen) {
-            painter->setPen(m_style.caret);
-            l->drawCursor(painter, QPointF(0, 0), ctx.cursorPosition - bpos, 1);
+            // a bar of the caret's own color (QTextLayout's inverts what's under it, whatever the pen)
+            const int rel = ctx.cursorPosition - bpos;
+            const QTextLine line = l->lineForTextPosition(rel);
+            if (line.isValid()) {
+                const QColor caret = m_caretOverride.isValid() ? m_caretOverride : m_style.caret;
+                const qreal x = l->position().x() + line.cursorToX(rel);
+                const qreal w = m_caretOverride.isValid() ? 2 : 1;
+                painter->fillRect(QRectF(x, l->position().y() + line.y(), w, line.height()), caret);
+            }
         }
     }
 }
