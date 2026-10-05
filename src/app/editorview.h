@@ -5,6 +5,7 @@
 // bottom bar holds the tabs and the counters, faint until the pointer nears.
 
 #include "app/chapteredit.h"
+#include "core/counters.h"
 
 #include <QHash>
 #include <QPointer>
@@ -83,6 +84,10 @@ public:
     void chapterMenu(const QString &chId, QPoint globalPos);
     void insertPlaceholder();
     void scheduleCounters();
+    // a sprint: so many words from now, shown on the goal counter
+    const std::optional<counters::Sprint> &sprint() const { return m_sprint; }
+    void startSprint(int target);
+    void endSprint();
     void openSidePane();
     void refreshSidePane(); // deferred: the pane's own widgets may be asking
     void refreshOutline();
@@ -134,6 +139,7 @@ private:
     QString m_tab = "manuscript";
     QString m_current;
     QString m_wordMode = "book";
+    std::optional<counters::Sprint> m_sprint;
     QHash<QString, QTimer *> m_saveTimers;
     QHash<QString, int> m_wordCache;
     QTimer m_counterTimer, m_flushTimer, m_refreshTimer, m_scrollTimer;

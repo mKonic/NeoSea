@@ -54,6 +54,11 @@ QDialog QLabel#title { color: %5; font-size: 16px; }
 QDialog QLabel { color: %1; }
 QLineEdit { background: %2; border: 1px solid %4; border-radius: 6px; padding: 7px 10px; color: %1; selection-background-color: %5; }
 QLineEdit:focus { border-color: %5; }
+QSpinBox, QComboBox { background: %2; border: 1px solid %4; border-radius: 6px; padding: 5px 8px; color: %1; selection-background-color: %5; }
+QSpinBox:focus, QComboBox:focus { border-color: %5; }
+QSpinBox::up-button, QSpinBox::down-button { width: 0; border: none; }
+QComboBox::drop-down { border: none; width: 18px; }
+QComboBox QAbstractItemView { background: #262626; color: #dddddd; border: 1px solid #3a3a3a; selection-background-color: #333333; outline: none; }
 QPushButton { background: none; border: none; color: %6; padding: 7px 10px; }
 QPushButton:hover { color: %1; }
 QPushButton#gold { background: %5; color: #191919; border-radius: 6px; padding: 7px 18px; }

@@ -9,6 +9,7 @@
 
 #include <optional>
 
+class QDialog;
 class QLabel;
 class QTimer;
 
@@ -20,6 +21,9 @@ struct Choice {
     QVariant value;
     bool danger = false;
 };
+
+// NEO's modal: a titled sheet in the room's colors, its layout a QVBoxLayout
+QDialog *makeDialog(QWidget *parent, const QString &title, int width);
 
 // null on cancel
 std::optional<QString> askInput(QWidget *parent, const QString &title, const QString &placeholder,

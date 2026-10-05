@@ -17,8 +17,6 @@
 
 namespace neosea {
 
-namespace {
-
 QDialog *makeDialog(QWidget *parent, const QString &title, int width)
 {
     auto *d = new QDialog(parent, Qt::Dialog | Qt::FramelessWindowHint);
@@ -37,8 +35,6 @@ QDialog *makeDialog(QWidget *parent, const QString &title, int width)
     lay->addWidget(h);
     return d;
 }
-
-} // namespace
 
 std::optional<QString> askInput(QWidget *parent, const QString &title, const QString &placeholder, const QString &value)
 {

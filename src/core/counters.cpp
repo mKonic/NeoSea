@@ -30,4 +30,24 @@ int trackDaily(QJsonObject &book, int total, const QString &today, bool *changed
     return day.value("end").toInt() - day.value("start").toInt();
 }
 
+Chart lastThirtyDays(const QJsonObject &book, const QDateTime &now, int dayEndsAt)
+{
+    Chart c;
+    const QJsonObject counts = book.value("dailyCounts").toObject();
+    for (int i = 29; i >= 0; --i) c.days << writingDay(now.addDays(-i), dayEndsAt);
+    int last = 0;
+    for (const QString &d : c.days)
+        if (counts.contains(d)) {
+            last = counts.value(d).toObject().value("start").toInt();
+            break;
+        }
+    for (const QString &d : c.days) {
+        const QJsonObject day = counts.value(d).toObject();
+        if (!day.isEmpty()) last = day.value("end").toInt();
+        c.daily << (day.isEmpty() ? 0 : std::max(0, day.value("end").toInt() - day.value("start").toInt()));
+        c.total << last;
+    }
+    return c;
+}
+
 } // namespace neosea::counters

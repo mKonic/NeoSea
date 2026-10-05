@@ -516,6 +516,7 @@ void EditorView::openSession()
 void EditorView::closeSession()
 {
     flush(true);
+    m_sprint.reset(); // a sprint belongs to the book it began in
     m_flushTimer.stop();
     m_refreshTimer.stop();
     for (QTimer *t : m_saveTimers) t->deleteLater();
@@ -802,6 +803,23 @@ void EditorView::chapterFocused(ChapterEdit *e)
 
 void EditorView::scheduleCounters() { m_counterTimer.start(150); }
 
+void EditorView::startSprint(int target)
+{
+    m_sprint = counters::Sprint{target, bookWords(), QDateTime::currentMSecsSinceEpoch(), false};
+    emit m_app->toast(t("Sprint started — {n} words. Go.", {{"n", target}}));
+    updateCounters();
+}
+
+void EditorView::endSprint()
+{
+    if (!m_sprint) return;
+    const int got = m_sprint->words(bookWords());
+    const int minutes = int(std::lround((QDateTime::currentMSecsSinceEpoch() - m_sprint->startMs) / 60000.0));
+    emit m_app->toast(t("Sprint ended — {n} words in {min} min", {{"n", got}, {"min", minutes}}));
+    m_sprint.reset();
+    updateCounters();
+}
+
 int EditorView::chapterWords(const QString &chId)
 {
     if (auto it = m_wordCache.constFind(chId); it != m_wordCache.constEnd()) return *it;
@@ -865,7 +883,16 @@ void EditorView::updateCounters()
     const QString today = counters::writingDay(QDateTime::currentDateTime(), m_app->library().value("dayEndsAt").toInt());
     const int words = counters::trackDaily(b, total, today, &changed);
     const int goal = m_app->library().value("dailyGoal").toInt();
-    m_goalCounter->setText(goal ? t("{n} / {goal} today", {{"n", words}, {"goal", goal}}) : t("{n} today", {{"n", words}}));
+    if (m_sprint && !m_sprint->done) {
+        const int sprintWords = m_sprint->words(total);
+        m_goalCounter->setText(QStringLiteral("⚡ %1 / %2").arg(QLocale(I18n::locale()).toString(sprintWords), QLocale(I18n::locale()).toString(m_sprint->target)));
+        if (sprintWords >= m_sprint->target) {
+            m_sprint->done = true;
+            emit m_app->toast(t("Sprint complete — {n} words. Well earned.", {{"n", sprintWords}}), 6000);
+        }
+    } else {
+        m_goalCounter->setText(goal ? t("{n} / {goal} today", {{"n", words}, {"goal", goal}}) : t("{n} today", {{"n", words}}));
+    }
     if (changed) s->saveMeta();
 }
 

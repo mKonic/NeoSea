@@ -4,6 +4,7 @@
 #include "app/appsettings.h"
 #include "app/dialogs.h"
 #include "app/editorview.h"
+#include "app/goals.h"
 #include "app/writingmodes.h"
 #include "app/shelfview.h"
 #include "app/theme.h"
@@ -640,8 +641,7 @@ void MainWindow::chooseLibraryFolder()
 
 void MainWindow::openGoals()
 {
-    // the progress room comes with the goals pass
-    m_toast->show(t("Goals…"));
+    neosea::openGoals(this, m_app, m_app->session() ? m_editor : nullptr);
 }
 
 void MainWindow::showHelp()

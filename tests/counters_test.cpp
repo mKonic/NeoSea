@@ -35,3 +35,28 @@ TEST(Counters, Pages)
     EXPECT_EQ(counters::pageCount(250), 1);
     EXPECT_EQ(counters::pageCount(251), 2);
 }
+
+TEST(Counters, ThirtyDaysForTheChart)
+{
+    QJsonObject book;
+    book.insert("dailyCounts", QJsonObject{{"2026-10-01", QJsonObject{{"start", 100}, {"end", 400}}},
+                                           {"2026-10-03", QJsonObject{{"start", 400}, {"end", 350}}},
+                                           {"2026-10-05", QJsonObject{{"start", 350}, {"end", 900}}}});
+    const auto c = counters::lastThirtyDays(book, QDateTime(QDate(2026, 10, 5), QTime(15, 0)), 0);
+    ASSERT_EQ(c.days.size(), 30);
+    EXPECT_EQ(c.days.last(), "2026-10-05");
+    EXPECT_EQ(c.days.first(), "2026-09-06");
+    EXPECT_EQ(c.daily.last(), 550);
+    EXPECT_EQ(c.daily[c.days.indexOf("2026-10-03")], 0); // a day that cut more than it wrote shows nothing
+    EXPECT_EQ(c.total.first(), 100);                     // before the first day written: where it began
+    EXPECT_EQ(c.total[c.days.indexOf("2026-10-02")], 400); // carried over a day with no writing
+    EXPECT_EQ(c.total.last(), 900);
+}
+
+TEST(Counters, ASprintStartsLowerWhenWordsAreCut)
+{
+    counters::Sprint s{500, 1000, 0, false};
+    EXPECT_EQ(s.words(1100), 100);
+    EXPECT_EQ(s.words(900), 0);
+    EXPECT_EQ(s.words(950), 50);
+}
