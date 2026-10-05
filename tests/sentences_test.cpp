@@ -39,3 +39,11 @@ TEST(Sentences, AbbreviationsDontEndASentence)
 {
     EXPECT_EQ(at("Mr. Smith left. He was late.", 5), "Mr. Smith left.");
 }
+
+TEST(Sentences, EverySentenceFromAnOffset)
+{
+    const QString t = "One. Two two. Three.";
+    EXPECT_EQ(sentenceSpans(t, 0, "en"), (QList<QPair<int, int>>{{0, 5}, {5, 14}, {14, 20}}));
+    EXPECT_EQ(sentenceSpans(t, 7, "en"), (QList<QPair<int, int>>{{7, 14}, {14, 20}})); // from the middle of the second
+    EXPECT_TRUE(sentenceSpans("   ", 0, "en").isEmpty());
+}

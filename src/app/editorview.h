@@ -32,6 +32,7 @@ class SearchBar;
 class SpellPass;
 class WritingModes;
 class VimKeys;
+class ReadAloud;
 
 class EditorView : public QWidget, public ChapterHost {
     Q_OBJECT
@@ -78,6 +79,7 @@ public:
     QScrollArea *scrollArea() const { return m_scroll; }
     WritingModes *modes() const { return m_modes; }
     VimKeys *vim() const { return m_vim; }
+    ReadAloud *readAloud() const { return m_read; }
     SearchBar *searchBar() const { return m_search; }
     Q_INVOKABLE void openSearch();
     void selectionToDarlings(ChapterEdit *e); // the drag onto the tab, and Ctrl+Shift+D
@@ -135,6 +137,7 @@ private:
     SpellPass *m_spell;
     WritingModes *m_modes;
     VimKeys *m_vim;
+    ReadAloud *m_read;
     NavPane *m_nav = nullptr;
     SidePane *m_side = nullptr;
     QWidget *m_bar;

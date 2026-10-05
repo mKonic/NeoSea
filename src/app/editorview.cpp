@@ -7,6 +7,7 @@
 #include "app/spellpass.h"
 #include "app/writingmodes.h"
 #include "app/vimkeys.h"
+#include "app/readaloud.h"
 #include "core/darlings.h"
 #include "app/walknote.h"
 #include "app/dialogs.h"
@@ -286,6 +287,7 @@ EditorView::EditorView(App *app, QWidget *parent) : QWidget(parent), m_app(app)
     m_spell = new SpellPass(this);
     m_modes = new WritingModes(this);
     m_vim = new VimKeys(this);
+    m_read = new ReadAloud(this);
     m_vim->watch(m_aux->notesEdit());
     connect(m_search, &SearchBar::returnedToPage, this, [this](bool fromVim) {
         if (fromVim) m_vim->rest();
@@ -524,6 +526,7 @@ void EditorView::openSession()
 void EditorView::closeSession()
 {
     flush(true);
+    m_read->stop(false);
     m_sprint.reset(); // a sprint belongs to the book it began in
     m_flushTimer.stop();
     m_refreshTimer.stop();

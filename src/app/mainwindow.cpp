@@ -8,6 +8,7 @@
 #include "app/goals.h"
 #include "app/writingmodes.h"
 #include "app/vimkeys.h"
+#include "app/readaloud.h"
 #include "app/shelfview.h"
 #include "app/theme.h"
 #include "core/bookmodel.h"
@@ -342,6 +343,9 @@ void MainWindow::buildMenus()
     // the ticks follow the level, however it was set
     connect(focusMenu, &QMenu::aboutToShow, this, [this, focusGroup] {
         for (QAction *a : focusGroup->actions()) a->setChecked(a->text() == (m_editor->modes()->focusLevel() == "sentence" ? t("Sentence") : m_editor->modes()->focusLevel() == "paragraph" ? t("Paragraph") : t("Off")));
+    });
+    add(view, t("Read Aloud"), QKeySequence("Ctrl+Shift+U"), [this] {
+        if (m_views->currentWidget() == m_editor && m_app->session()) m_editor->readAloud()->toggle();
     });
     QAction *vimAction = add(view, t("Vim Keys"), QKeySequence(), [this] { m_editor->vim()->toggle(); });
     vimAction->setCheckable(true);

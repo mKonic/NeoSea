@@ -37,4 +37,23 @@ QPair<int, int> sentenceAt(const QString &text, int offset, const QString &lang)
     return {hitStart, std::max(e, hitStart)};
 }
 
+QList<QPair<int, int>> sentenceSpans(const QString &text, int from, const QString &lang)
+{
+    QList<QPair<int, int>> out;
+    if (text.trimmed().isEmpty()) return out;
+    UErrorCode err = U_ZERO_ERROR;
+    QByteArray loc = lang.section('-', 0, 0).toLatin1();
+    if (loc.isEmpty()) loc = "en";
+    std::unique_ptr<icu::BreakIterator> it(icu::BreakIterator::createSentenceInstance(icu::Locale((loc + "@ss=standard").constData()), err));
+    if (U_FAILURE(err)) return {{from, int(text.size())}};
+    const icu::UnicodeString u(reinterpret_cast<const UChar *>(text.utf16()), int32_t(text.size()));
+    it->setText(u);
+    int start = 0;
+    for (int end = it->next(); end != icu::BreakIterator::DONE; start = end, end = it->next()) {
+        const int a = std::max(start, from);
+        if (end > a && !text.mid(a, end - a).trimmed().isEmpty()) out << qMakePair(a, end);
+    }
+    return out;
+}
+
 } // namespace neosea
