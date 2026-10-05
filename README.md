@@ -10,8 +10,7 @@
 
 A distraction-free word processor for authors: a bookshelf of your books, manuscripts that look like
 books as you write them, outlining with index cards, screenplays, and plain files on your disk. This
-fork of [hughhowey/neo](https://github.com/hughhowey/neo) is a C++ and Qt rewrite, without the AI
-cover painting.
+fork of [hughhowey/neo](https://github.com/hughhowey/neo) is a C++ and Qt rewrite.
 
 ## License
 
